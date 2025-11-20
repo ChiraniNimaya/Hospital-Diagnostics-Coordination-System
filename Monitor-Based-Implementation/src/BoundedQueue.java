@@ -1,10 +1,11 @@
+import java.util.ArrayList;
+import java.util.List;
+
 //Monitor-based Producer-Consumer
-public class BoundedQueue {
-    private final TestOrder[] buffer;
+class BoundedQueue {
+    private final List<TestOrder> orderBuffer;
     private final int capacity;
     private int count = 0;
-    private int in = 0;
-    private int out = 0;
 
     // Metrics
     private int totalAdmitted = 0;
@@ -12,11 +13,12 @@ public class BoundedQueue {
     private long totalWaitTime = 0;
 
     // INVARIANT: 0 <= count <= capacity
-    // INVARIANT: (in - out) mod capacity == count mod capacity
+    // INVARIANT: orderBuffer.size() == count
+    // INVARIANT: All elements in orderBuffer are non-null
 
     public BoundedQueue(int capacity) {
         this.capacity = capacity;
-        this.buffer = new TestOrder[capacity];
+        this.orderBuffer = new ArrayList<>(capacity);
     }
 
     public synchronized void produce(TestOrder order) throws InterruptedException {
@@ -24,31 +26,28 @@ public class BoundedQueue {
 
         // Wait while queue is full
         while (count == capacity) {
-            wait(); // Thread enters WAITING state
+            wait();
         }
 
         totalWaitTime += (System.currentTimeMillis() - startWait);
 
         // Add to buffer
-        buffer[in] = order;
-        in = (in + 1) % capacity;
+        orderBuffer.add(order);
         count++;
         totalAdmitted++;
 
         // Notify waiting consumers
-        notifyAll(); // Could use notify() but notifyAll() is safer
+        notifyAll();
     }
 
     public synchronized TestOrder consume() throws InterruptedException {
         // Wait while queue is empty
         while (count == 0) {
-            wait(); // Thread enters WAITING state
+            wait();
         }
 
-        // Remove from buffer
-        TestOrder order = buffer[out];
-        buffer[out] = null;
-        out = (out + 1) % capacity;
+        // Remove from buffer (FIFO: remove first element)
+        TestOrder order = orderBuffer.remove(0);
         count--;
 
         // Notify waiting producers

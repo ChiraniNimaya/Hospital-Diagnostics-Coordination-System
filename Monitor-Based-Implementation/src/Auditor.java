@@ -1,5 +1,5 @@
 //Reader thread
-public class Auditor implements Runnable {
+class Auditor implements Runnable {
     private final int id;
     private final SystemState state;
     private final int reportInterval; // ms

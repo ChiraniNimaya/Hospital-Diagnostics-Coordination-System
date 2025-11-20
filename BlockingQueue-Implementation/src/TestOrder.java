@@ -1,13 +1,11 @@
 class TestOrder {
-    public enum Type { BLOOD, PCR, HISTOPATHOLOGY }
-
     private static int counter = 0;
     private final long id;
-    private final Type type;
+    private final String type; // "BLOOD", "PCR", "HISTOPATHOLOGY"
     private final long submissionTime;
     private final String source;
 
-    public TestOrder(Type type, String source) {
+    public TestOrder(String type, String source) {
         this.id = ++counter;
         this.type = type;
         this.source = source;
@@ -15,12 +13,7 @@ class TestOrder {
     }
 
     public long getId() { return id; }
-    public Type getType() { return type; }
+    public String getType() { return type; }
     public long getSubmissionTime() { return submissionTime; }
     public String getSource() { return source; }
-
-    @Override
-    public String toString() {
-        return "TestOrder{id=" + id + ", type=" + type + ", source='" + source + "'}";
-    }
 }

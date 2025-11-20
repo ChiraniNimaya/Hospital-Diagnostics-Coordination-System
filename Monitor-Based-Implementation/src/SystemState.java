@@ -71,6 +71,16 @@ public class SystemState {
         }
     }
 
+    public synchronized void setAnalyzerCapacity(int capacity) throws InterruptedException {
+        acquireWrite();
+        try {
+            this.activeAnalyzers = capacity;
+            System.out.println("[SUPERVISOR] Analyzer capacity set to: " + capacity);
+        } finally {
+            releaseWrite();
+        }
+    }
+
     public synchronized void setMaintenanceMode(boolean mode) throws InterruptedException {
         acquireWrite();
         try {

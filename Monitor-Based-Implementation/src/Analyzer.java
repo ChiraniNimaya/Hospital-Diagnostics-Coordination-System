@@ -3,14 +3,21 @@ public class Analyzer implements Runnable {
     private final int id;
     private final BoundedQueue queue;
     private final SystemState state;
-    private final int processingTime; // ms per order
     private volatile boolean running = true;
 
-    public Analyzer(int id, BoundedQueue queue, SystemState state, int processingTime) {
+    // Different test types require different processing times
+    private static final int BLOOD_PROCESSING_TIME = 500;        // 500ms
+    private static final int PCR_PROCESSING_TIME = 1000;         // 1 second
+    private static final int HISTOPATHOLOGY_PROCESSING_TIME = 2000; // 2 seconds
+
+    private int bloodProcessed = 0;
+    private int pcrProcessed = 0;
+    private int histoProcessed = 0;
+
+    public Analyzer(int id, BoundedQueue queue, SystemState state) {
         this.id = id;
         this.queue = queue;
         this.state = state;
-        this.processingTime = processingTime;
     }
 
     @Override
@@ -19,16 +26,56 @@ public class Analyzer implements Runnable {
             while (running && !Thread.currentThread().isInterrupted()) {
                 TestOrder order = queue.consume();
 
-                // Process the order
+                // Process based on test type
+                int processingTime = getProcessingTime(order.getType());
                 Thread.sleep(processingTime);
+
+                // Update counts
+                updateStats(order.getType());
                 state.incrementProcessed();
 
-                System.out.println("[ANALYZER-" + id + "] Processed order " +
-                        order.getId() + " from " + order.getSource());
+                System.out.println("[ANALYZER-" + id + "] Processed " +
+                        order.getType() + " order #" + order.getId() +
+                        " from " + order.getSource() +
+                        " (took " + processingTime + "ms)");
             }
+
+            // Print final statistics for this analyzer
+            System.out.println("[ANALYZER-" + id + "] Final stats: " +
+                    "BLOOD=" + bloodProcessed +
+                    ", PCR=" + pcrProcessed +
+                    ", HISTO=" + histoProcessed);
+
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.out.println("[ANALYZER-" + id + "] Shutting down gracefully");
+        }
+    }
+
+    private int getProcessingTime(TestOrder.Type testType) {
+        switch (testType) {
+            case BLOOD:
+                return BLOOD_PROCESSING_TIME;
+            case PCR:
+                return PCR_PROCESSING_TIME;
+            case HISTOPATHOLOGY:
+                return HISTOPATHOLOGY_PROCESSING_TIME;
+            default:
+                return 1000; // Default
+        }
+    }
+
+    private void updateStats(TestOrder.Type testType) {
+        switch (testType) {
+            case BLOOD:
+                bloodProcessed++;
+                break;
+            case PCR:
+                pcrProcessed++;
+                break;
+            case HISTOPATHOLOGY:
+                histoProcessed++;
+                break;
         }
     }
 
@@ -36,3 +83,4 @@ public class Analyzer implements Runnable {
         running = false;
     }
 }
+

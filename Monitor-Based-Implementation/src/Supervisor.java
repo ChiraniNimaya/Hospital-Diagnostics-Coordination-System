@@ -1,5 +1,5 @@
 //Writer thread
-public class Supervisor implements Runnable {
+class Supervisor implements Runnable {
     private final SystemState state;
     private final int updateInterval; // ms
     private volatile boolean running = true;
