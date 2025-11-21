@@ -1,10 +1,18 @@
 //Shared state for Reader-Writer pattern
-public class SystemState {
+class SystemState {
     private int totalSubmitted = 0;
     private int totalProcessed = 0;
-    private int totalExpired = 0;
-    private int activeAnalyzers = 0;
-    private String priorityPolicy = "FIFO";
+    private int maxAnalyzerCapacity = 10;
+    private int currentActiveAnalyzers = 0;
+
+    // Functional policy that actually affects behavior
+    public enum ProcessingPolicy {
+        FIFO,              // First In First Out (default)
+        PRIORITY,          // Priority-based (Emergency > Urgent > Routine)
+        EMERGENCY_FIRST    // Only emergency orders processed first
+    }
+
+    private ProcessingPolicy currentPolicy = ProcessingPolicy.FIFO;
     private boolean maintenanceMode = false;
 
     // Reader-Writer control using monitors
@@ -12,12 +20,13 @@ public class SystemState {
     private int waitingWriters = 0;
     private boolean activeWriter = false;
 
-    // Metrics
+    // Timestamp for snapshot
+    private long timestamp;
+
     public synchronized void incrementSubmitted() { totalSubmitted++; }
     public synchronized void incrementProcessed() { totalProcessed++; }
-    public synchronized void incrementExpired() { totalExpired++; }
 
-    // READER-PREFERRING POLICY (can be modified for writer-preferring)
+    // READER-PREFERRING POLICY
     public synchronized void acquireRead() throws InterruptedException {
         // Wait if there's an active writer
         while (activeWriter) {
@@ -49,45 +58,35 @@ public class SystemState {
     }
 
     // Snapshot for auditors
-    public synchronized SystemSnapshot getSnapshot() throws InterruptedException {
+    public SystemSnapshot getSnapshot() throws InterruptedException {
         acquireRead();
         try {
-            return new SystemSnapshot(totalSubmitted, totalProcessed,
-                    totalExpired, activeAnalyzers,
-                    priorityPolicy, maintenanceMode);
+            return new SystemSnapshot(
+                    totalSubmitted,
+                    totalProcessed,
+                    currentActiveAnalyzers,
+                    maxAnalyzerCapacity,
+                    currentPolicy.toString(),
+                    maintenanceMode
+            );
         } finally {
             releaseRead();
         }
     }
 
     // Configuration change for supervisors
-    public synchronized void updatePolicy(String newPolicy) throws InterruptedException {
+    public void setSystemState(String newPolicy, int capacity, boolean isMaintenanceMode) throws InterruptedException{
         acquireWrite();
         try {
-            this.priorityPolicy = newPolicy;
+            this.currentPolicy = ProcessingPolicy.valueOf(newPolicy);
             System.out.println("[SUPERVISOR] Policy changed to: " + newPolicy);
-        } finally {
-            releaseWrite();
-        }
-    }
-
-    public synchronized void setAnalyzerCapacity(int capacity) throws InterruptedException {
-        acquireWrite();
-        try {
-            this.activeAnalyzers = capacity;
+            this.maxAnalyzerCapacity = capacity;
             System.out.println("[SUPERVISOR] Analyzer capacity set to: " + capacity);
+            this.maintenanceMode = isMaintenanceMode;
+            System.out.println("[SUPERVISOR] Maintenance mode: " + isMaintenanceMode);
         } finally {
             releaseWrite();
         }
     }
 
-    public synchronized void setMaintenanceMode(boolean mode) throws InterruptedException {
-        acquireWrite();
-        try {
-            this.maintenanceMode = mode;
-            System.out.println("[SUPERVISOR] Maintenance mode: " + mode);
-        } finally {
-            releaseWrite();
-        }
-    }
 }

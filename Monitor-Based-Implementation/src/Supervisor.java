@@ -12,14 +12,16 @@ class Supervisor implements Runnable {
     @Override
     public void run() {
         String[] policies = {"FIFO", "PRIORITY", "EMERGENCY_FIRST"};
-        int policyIndex = 0;
+        int policyIndex = 0; //Default policy is set to FIFO
+        int capacity = 25;
+        boolean mode = false;
 
         try {
             while (running && !Thread.currentThread().isInterrupted()) {
                 Thread.sleep(updateInterval);
 
                 policyIndex = (policyIndex + 1) % policies.length;
-                state.updatePolicy(policies[policyIndex]);
+                state.setSystemState(policies[policyIndex], capacity, mode);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

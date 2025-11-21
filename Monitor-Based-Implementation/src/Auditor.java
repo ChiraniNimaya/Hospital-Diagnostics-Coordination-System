@@ -21,7 +21,7 @@ class Auditor implements Runnable {
                         snapshot.timestamp + ": " +
                         "Submitted=" + snapshot.totalSubmitted +
                         ", Processed=" + snapshot.totalProcessed +
-                        ", Policy=" + snapshot.priorityPolicy);
+                        ", Policy=" + snapshot.currentPolicy);
 
                 Thread.sleep(reportInterval);
             }
