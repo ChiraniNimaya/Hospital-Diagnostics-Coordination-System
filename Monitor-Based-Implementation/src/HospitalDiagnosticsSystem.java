@@ -172,7 +172,7 @@ public class HospitalDiagnosticsSystem {
                 supervisorThreads, queue, state, runDuration);
     }
 
-    // Workload 4: Reader-Heavy (Tests Reader-Writer Fairness)
+    // Workload 4: Reader-Heavy
     private static void runReaderHeavyWorkload() throws InterruptedException {
         System.out.println("=== WORKLOAD 4: READER-HEAVY (Fairness Test) ===\n");
 

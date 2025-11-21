@@ -40,15 +40,17 @@ public class Analyzer implements Runnable {
                         " (took " + processingTime + "ms)");
             }
 
+
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("[ANALYZER-" + id + "] Shutting down gracefully");
+        } finally {
             // Print final statistics for this analyzer
             System.out.println("[ANALYZER-" + id + "] Final stats: " +
                     "BLOOD=" + bloodProcessed +
                     ", PCR=" + pcrProcessed +
                     ", HISTO=" + histoProcessed);
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("[ANALYZER-" + id + "] Shutting down gracefully");
         }
     }
 

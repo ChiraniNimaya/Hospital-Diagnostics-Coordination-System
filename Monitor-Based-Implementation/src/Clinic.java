@@ -20,9 +20,9 @@ public class Clinic implements Runnable {
 
     @Override
     public void run() {
+        int orderCount = 0;
         try {
             long startTime = System.currentTimeMillis();
-            int orderCount = 0;
 
             while (running && !Thread.currentThread().isInterrupted()) {
                 long elapsedTime = System.currentTimeMillis() - startTime;
@@ -31,6 +31,7 @@ public class Clinic implements Runnable {
                 TestOrder.Type testType = selectTestType();
                 TestOrder order = new TestOrder(testType, name);
                 queue.produce(order);
+                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                 state.incrementSubmitted();
                 orderCount++;
 
@@ -38,11 +39,11 @@ public class Clinic implements Runnable {
                 int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);
                 Thread.sleep(sleepTime);
             }
-
-            System.out.println("[" + name + "] Completed " + orderCount + " orders");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.out.println("[" + name + "] Shutting down gracefully");
+        } finally {
+            System.out.println("[" + name + "] Completed " + orderCount + " orders");
         }
     }
 
