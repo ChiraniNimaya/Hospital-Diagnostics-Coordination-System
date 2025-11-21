@@ -1,10 +1,12 @@
 //Writer thread
 class Supervisor implements Runnable {
+    private final int id;
     private final SystemState state;
     private final int updateInterval; // ms
     private volatile boolean running = true;
 
-    public Supervisor(SystemState state, int updateInterval) {
+    public Supervisor(int id, SystemState state, int updateInterval) {
+        this.id = id;
         this.state = state;
         this.updateInterval = updateInterval;
     }
@@ -22,10 +24,14 @@ class Supervisor implements Runnable {
 
                 policyIndex = (policyIndex + 1) % policies.length;
                 state.setSystemState(policies[policyIndex], capacity, mode);
+                System.out.println("[SUPERVISOR-" + id + "] Reconfiguration of System State : " +
+                        "Policy = " + policies[policyIndex] +
+                        ", Analyzer Capacity = " + capacity +
+                        ", Maintenance Mode = " + ((mode) ? "Yes" : "No"));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            System.out.println("[SUPERVISOR] Shutting down gracefully");
+            System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
         }
     }
 

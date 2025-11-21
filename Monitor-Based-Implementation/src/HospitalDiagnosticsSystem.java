@@ -34,6 +34,7 @@ public class HospitalDiagnosticsSystem {
         int numClinics = 2;
         int numAnalyzers = 4;
         int numAuditors = 2;
+        int numSupervisors = 1;
         int runDuration = 30000; // 30 seconds
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
@@ -55,7 +56,7 @@ public class HospitalDiagnosticsSystem {
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
-        // Create auditors and supervisor
+        // Create auditors and supervisors
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
@@ -63,12 +64,16 @@ public class HospitalDiagnosticsSystem {
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
-        Supervisor supervisor = new Supervisor(state, 10000);
-        Thread supervisorThread = new Thread(supervisor);
+        Supervisor[] supervisors = new Supervisor[numSupervisors];
+        Thread[] supervisorThreads = new Thread[numSupervisors];
+        for (int i = 0; i < numSupervisors; i++) {
+            supervisors[i] = new Supervisor(i, state, 10000);
+            supervisorThreads[i] = new Thread(supervisors[i]);
+        }
 
-        runSimulation(clinics, analyzers, auditors, supervisor,
+        runSimulation(clinics, analyzers, auditors, supervisors,
                 clinicThreads, analyzerThreads, auditorThreads,
-                supervisorThread, queue, state, runDuration);
+                supervisorThreads, queue, state, runDuration);
     }
 
     // Workload 2: Emergency Surge (High Contention)
@@ -79,6 +84,7 @@ public class HospitalDiagnosticsSystem {
         int numClinics = 6;     // Many producers
         int numAnalyzers = 2;   // Few consumers
         int numAuditors = 2;
+        int numSupervisors = 1;
         int runDuration = 30000;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
@@ -107,12 +113,16 @@ public class HospitalDiagnosticsSystem {
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
-        Supervisor supervisor = new Supervisor(state, 10000);
-        Thread supervisorThread = new Thread(supervisor);
+        Supervisor[] supervisors = new Supervisor[numSupervisors];
+        Thread[] supervisorThreads = new Thread[numSupervisors];
+        for (int i = 0; i < numSupervisors; i++) {
+            supervisors[i] = new Supervisor(i, state, 10000);
+            supervisorThreads[i] = new Thread(supervisors[i]);
+        }
 
-        runSimulation(clinics, analyzers, auditors, supervisor,
+        runSimulation(clinics, analyzers, auditors, supervisors,
                 clinicThreads, analyzerThreads, auditorThreads,
-                supervisorThread, queue, state, runDuration);
+                supervisorThreads, queue, state, runDuration);
     }
 
     // Workload 3: Realistic Mixed Pattern
@@ -123,6 +133,7 @@ public class HospitalDiagnosticsSystem {
         int numClinics = 4;
         int numAnalyzers = 3;
         int numAuditors = 3;
+        int numSupervisors = 1;
         int runDuration = 60000; // 60 seconds to see full pattern cycle
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
@@ -149,12 +160,16 @@ public class HospitalDiagnosticsSystem {
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
-        Supervisor supervisor = new Supervisor(state, 15000);
-        Thread supervisorThread = new Thread(supervisor);
+        Supervisor[] supervisors = new Supervisor[numSupervisors];
+        Thread[] supervisorThreads = new Thread[numSupervisors];
+        for (int i = 0; i < numSupervisors; i++) {
+            supervisors[i] = new Supervisor(i, state, 15000);
+            supervisorThreads[i] = new Thread(supervisors[i]);
+        }
 
-        runSimulation(clinics, analyzers, auditors, supervisor,
+        runSimulation(clinics, analyzers, auditors, supervisors,
                 clinicThreads, analyzerThreads, auditorThreads,
-                supervisorThread, queue, state, runDuration);
+                supervisorThreads, queue, state, runDuration);
     }
 
     // Workload 4: Reader-Heavy (Tests Reader-Writer Fairness)
@@ -165,6 +180,7 @@ public class HospitalDiagnosticsSystem {
         int numClinics = 3;
         int numAnalyzers = 3;
         int numAuditors = 10;  // Many readers
+        int numSupervisors = 1;
         int runDuration = 30000;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
@@ -193,12 +209,16 @@ public class HospitalDiagnosticsSystem {
         }
 
         // Supervisor tries to write frequently (tests starvation)
-        Supervisor supervisor = new Supervisor(state, 3000);
-        Thread supervisorThread = new Thread(supervisor);
+        Supervisor[] supervisors = new Supervisor[numSupervisors];
+        Thread[] supervisorThreads = new Thread[numSupervisors];
+        for (int i = 0; i < numSupervisors; i++) {
+            supervisors[i] = new Supervisor(i, state, 3000);
+            supervisorThreads[i] = new Thread(supervisors[i]);
+        }
 
-        runSimulation(clinics, analyzers, auditors, supervisor,
+        runSimulation(clinics, analyzers, auditors, supervisors,
                 clinicThreads, analyzerThreads, auditorThreads,
-                supervisorThread, queue, state, runDuration);
+                supervisorThreads, queue, state, runDuration);
     }
 
     // Workload 5: Balanced (Default)
@@ -209,6 +229,7 @@ public class HospitalDiagnosticsSystem {
         int numClinics = 3;
         int numAnalyzers = 3;
         int numAuditors = 2;
+        int numSupervisors = 1;
         int runDuration = 20000;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
@@ -235,19 +256,23 @@ public class HospitalDiagnosticsSystem {
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
-        Supervisor supervisor = new Supervisor(state, 8000);
-        Thread supervisorThread = new Thread(supervisor);
+        Supervisor[] supervisors = new Supervisor[numSupervisors];
+        Thread[] supervisorThreads = new Thread[numSupervisors];
+        for (int i = 0; i < numSupervisors; i++) {
+            supervisors[i] = new Supervisor(i, state, 8000);
+            supervisorThreads[i] = new Thread(supervisors[i]);
+        }
 
-        runSimulation(clinics, analyzers, auditors, supervisor,
+        runSimulation(clinics, analyzers, auditors, supervisors,
                 clinicThreads, analyzerThreads, auditorThreads,
-                supervisorThread, queue, state, runDuration);
+                supervisorThreads, queue, state, runDuration);
     }
 
     // Common simulation execution logic
     private static void runSimulation(
-            Clinic[] clinics, Analyzer[] analyzers, Auditor[] auditors, Supervisor supervisor,
+            Clinic[] clinics, Analyzer[] analyzers, Auditor[] auditors, Supervisor[] supervisors,
             Thread[] clinicThreads, Thread[] analyzerThreads, Thread[] auditorThreads,
-            Thread supervisorThread, BoundedQueue queue, SystemState state, int duration)
+            Thread[] supervisorThreads, BoundedQueue queue, SystemState state, int duration)
             throws InterruptedException {
 
         // Start all threads
@@ -255,7 +280,7 @@ public class HospitalDiagnosticsSystem {
         for (Thread t : clinicThreads) t.start();
         for (Thread t : analyzerThreads) t.start();
         for (Thread t : auditorThreads) t.start();
-        supervisorThread.start();
+        for (Thread t : supervisorThreads) t.start();
 
         // Monitor queue size periodically
         Thread monitor = new Thread(() -> {
@@ -279,20 +304,20 @@ public class HospitalDiagnosticsSystem {
         for (Clinic c : clinics) c.shutdown();
         for (Analyzer a : analyzers) a.shutdown();
         for (Auditor a : auditors) a.shutdown();
-        supervisor.shutdown();
+        for (Supervisor a : supervisors) a.shutdown();
         monitor.interrupt();
 
         // Interrupt all threads
         for (Thread t : clinicThreads) t.interrupt();
         for (Thread t : analyzerThreads) t.interrupt();
         for (Thread t : auditorThreads) t.interrupt();
-        supervisorThread.interrupt();
+        for (Thread t : supervisorThreads) t.interrupt();
 
         // Wait for all threads to finish
         for (Thread t : clinicThreads) t.join();
         for (Thread t : analyzerThreads) t.join();
         for (Thread t : auditorThreads) t.join();
-        supervisorThread.join();
+        for (Thread t : supervisorThreads) t.join();
         monitor.join();
 
         // Final metrics

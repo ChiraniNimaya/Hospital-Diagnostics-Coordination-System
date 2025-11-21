@@ -79,11 +79,8 @@ class SystemState {
         acquireWrite();
         try {
             this.currentPolicy = ProcessingPolicy.valueOf(newPolicy);
-            System.out.println("[SUPERVISOR] Policy changed to: " + newPolicy);
             this.maxAnalyzerCapacity = capacity;
-            System.out.println("[SUPERVISOR] Analyzer capacity set to: " + capacity);
             this.maintenanceMode = isMaintenanceMode;
-            System.out.println("[SUPERVISOR] Maintenance mode: " + isMaintenanceMode);
         } finally {
             releaseWrite();
         }
