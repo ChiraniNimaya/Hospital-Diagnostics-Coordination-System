@@ -4,6 +4,7 @@ public class Analyzer implements Runnable {
     private final BoundedQueue queue;
     private final SystemState state;
     private volatile boolean running = true;
+    private long maxWaitTime = 5000; //Wait time to consume before expired
 
     // Different test types require different processing times
     private static final int BLOOD_PROCESSING_TIME = 500;        // 500ms
@@ -24,7 +25,17 @@ public class Analyzer implements Runnable {
     public void run() {
         try {
             while (running && !Thread.currentThread().isInterrupted()) {
-                TestOrder order = queue.consume();
+                // Wait for a free analyzer slot
+                state.acquireAnalyzerSlot();
+
+                TestOrder order = queue.consume(maxWaitTime);
+                if (order == null) {
+                    state.incrementExpired();
+                    System.out.println("[ANALYZER-" + id + "] Expired " +
+                            order.getType() + " order #" + order.getId() +
+                            " from " + order.getSource());
+                    continue; // skip processing
+                }
 
                 // Process based on test type
                 int processingTime = getProcessingTime(order.getType());
@@ -38,9 +49,10 @@ public class Analyzer implements Runnable {
                         order.getType() + " order #" + order.getId() +
                         " from " + order.getSource() +
                         " (took " + processingTime + "ms)");
+
+                // Release slot once processing completes
+                state.releaseAnalyzerSlot();
             }
-
-
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

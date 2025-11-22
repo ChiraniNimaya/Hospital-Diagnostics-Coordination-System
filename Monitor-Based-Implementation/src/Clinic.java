@@ -30,10 +30,11 @@ public class Clinic implements Runnable {
                 // Generate test order with variable type
                 TestOrder.Type testType = selectTestType();
                 TestOrder order = new TestOrder(testType, name);
-                queue.produce(order);
-                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
-                state.incrementSubmitted();
-                orderCount++;
+                boolean admitted = queue.produce(order, 2000); // wait max 2 seconds                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
+                if (!admitted) {
+                    state.incrementRejected();
+                    orderCount++;
+                }
 
                 // Variable rate based on load pattern
                 int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);

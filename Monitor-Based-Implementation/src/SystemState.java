@@ -2,8 +2,10 @@
 class SystemState {
     private int totalSubmitted = 0;
     private int totalProcessed = 0;
-    private int maxAnalyzerCapacity = 10;
-    private int currentActiveAnalyzers = 0;
+    private int totalRejected = 0;
+    private int totalExpired = 0;
+    private int maxAnalyzerCapacity = 5;
+    private int activeAnalyzerSlots = 0;
 
     // Functional policy that actually affects behavior
     public enum ProcessingPolicy {
@@ -20,11 +22,10 @@ class SystemState {
     private int waitingWriters = 0;
     private boolean activeWriter = false;
 
-    // Timestamp for snapshot
-    private long timestamp;
-
     public synchronized void incrementSubmitted() { totalSubmitted++; }
     public synchronized void incrementProcessed() { totalProcessed++; }
+    public synchronized void incrementRejected() { totalRejected++; }
+    public synchronized void incrementExpired() { totalExpired++; }
 
     // READER-PREFERRING POLICY
     public synchronized void acquireRead() throws InterruptedException {
@@ -64,8 +65,10 @@ class SystemState {
             return new SystemSnapshot(
                     totalSubmitted,
                     totalProcessed,
-                    currentActiveAnalyzers,
+                    totalRejected,
+                    totalExpired,
                     maxAnalyzerCapacity,
+                    activeAnalyzerSlots,
                     currentPolicy.toString(),
                     maintenanceMode
             );
@@ -86,4 +89,16 @@ class SystemState {
         }
     }
 
+    //Analyzer slot acquisition
+    public synchronized void acquireAnalyzerSlot() throws InterruptedException {
+        while (activeAnalyzerSlots == maxAnalyzerCapacity) {
+            wait();
+        }
+        activeAnalyzerSlots++;
+    }
+
+    public synchronized void releaseAnalyzerSlot() {
+        activeAnalyzerSlots--;
+        notifyAll();
+    }
 }
