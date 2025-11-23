@@ -77,6 +77,16 @@ class SystemState {
         }
     }
 
+    public boolean isMaintenanceMode() throws InterruptedException {
+        acquireRead();
+        try {
+            return maintenanceMode;
+        } finally {
+            releaseRead();
+        }
+    }
+
+
     // Configuration change for supervisors
     public void setSystemState(String newPolicy, int capacity, boolean isMaintenanceMode) throws InterruptedException{
         acquireWrite();

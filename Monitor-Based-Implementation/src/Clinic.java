@@ -33,9 +33,11 @@ public class Clinic implements Runnable {
                 boolean admitted = queue.produce(order, 2000); // wait max 2 seconds                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                 if (!admitted) {
                     state.incrementRejected();
+                }
+                else {
+                    state.incrementSubmitted();
                     orderCount++;
                 }
-
                 // Variable rate based on load pattern
                 int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);
                 Thread.sleep(sleepTime);

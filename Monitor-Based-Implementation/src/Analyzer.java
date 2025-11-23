@@ -28,7 +28,7 @@ public class Analyzer implements Runnable {
                 // Wait for a free analyzer slot
                 state.acquireAnalyzerSlot();
 
-                TestOrder order = queue.consume(maxWaitTime);
+                TestOrder order = queue.consume(maxWaitTime, state.isMaintenanceMode());
                 if (order == null) {
                     state.incrementExpired();
                     System.out.println("[ANALYZER-" + id + "] Expired " +

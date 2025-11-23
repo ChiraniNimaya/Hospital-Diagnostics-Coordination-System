@@ -47,7 +47,7 @@ class BoundedQueue {
         return true;
     }
 
-    public synchronized TestOrder consume(long maxWaitTime) throws InterruptedException {
+    public synchronized TestOrder consume(long maxWaitTime, boolean mode) throws InterruptedException {
         // Wait while queue is empty
         while (count == 0) {
             wait();
@@ -57,12 +57,19 @@ class BoundedQueue {
         TestOrder order = orderBuffer.remove(0);
         count--;
 
+        // Check maintenance mode
+        if (mode) {
+            notifyAll();
+            return null; // treat as expired due to maintenance mode
+        }
+
         // Check expiration
         long waitTime = System.currentTimeMillis() - order.getSubmissionTime();
         if (waitTime > maxWaitTime) {
             notifyAll();
             return null; // Analyzer will skip expired orders
         }
+
 
         // Notify waiting producers
         notifyAll();
