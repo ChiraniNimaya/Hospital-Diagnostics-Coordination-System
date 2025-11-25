@@ -3,7 +3,7 @@ public class Clinic implements Runnable {
     private final String name;
     private final BoundedQueue queue;
     private final SystemState state;
-    private LoadPattern loadPattern;
+    private final LoadPattern loadPattern;
     private volatile boolean running = true;
 
     // Test type probabilities: BLOOD (60%), PCR (30%), HISTOPATHOLOGY (10%)
@@ -31,12 +31,13 @@ public class Clinic implements Runnable {
                 TestOrder.OrderType testType = selectTestType();
                 TestOrder order = new TestOrder(testType, name);
                 boolean admitted = queue.produce(order, 2000, state.getCurrentPolicy()); // wait max 2 seconds
-                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                 if (!admitted) {
                     state.incrementRejected();
+                    System.out.println("[" + name + "] Rejected " + testType + " order #" + order.getId());
                 }
                 else {
                     state.incrementSubmitted();
+                    System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                     orderCount++;
                 }
                 // Variable rate based on load pattern

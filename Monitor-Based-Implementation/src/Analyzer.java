@@ -24,7 +24,9 @@ public class Analyzer implements Runnable {
     @Override
     public void run() {
         try {
+
             while (running && !Thread.currentThread().isInterrupted()) {
+
                 // Wait for a free analyzer slot
                 state.acquireAnalyzerSlot();
 
@@ -50,6 +52,16 @@ public class Analyzer implements Runnable {
 
                 // Release slot once processing completes
                 state.releaseAnalyzerSlot();
+            }
+            // Process remaining orders in a shutdown
+            while (queue.getSize() > 0) {
+                TestOrder order = queue.consume(maxWaitTime, state.isMaintenanceMode());
+                if (order != null) {
+                    updateStats(order.getType());
+                    state.incrementProcessed();
+
+                    System.out.println("[SHUTDOWN] Processed order #" + order.getId());
+                }
             }
 
         } catch (InterruptedException e) {

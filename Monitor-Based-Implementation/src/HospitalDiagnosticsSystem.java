@@ -235,7 +235,7 @@ public class HospitalDiagnosticsSystem {
         int numAnalyzers = 3;
         int numAuditors = 2;
         int numSupervisors = 1;
-        int runDuration = 20000;
+        int runDuration = 5000;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
@@ -284,22 +284,22 @@ public class HospitalDiagnosticsSystem {
         System.out.println("Starting simulation...\n");
         for (Thread t : clinicThreads) t.start();
         for (Thread t : analyzerThreads) t.start();
-        for (Thread t : auditorThreads) t.start();
-        for (Thread t : supervisorThreads) t.start();
+//        for (Thread t : auditorThreads) t.start();
+//        for (Thread t : supervisorThreads) t.start();
 
-        // Monitor queue size periodically
-        Thread monitor = new Thread(() -> {
-            try {
-                while (!Thread.currentThread().isInterrupted()) {
-                    Thread.sleep(5000);
-                    System.out.println("\n[MONITOR] Queue size: " + queue.getSize() +
-                            ", Admitted: " + queue.getTotalAdmitted());
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        });
-        monitor.start();
+//        // Monitor queue size periodically
+//        Thread monitor = new Thread(() -> {
+//            try {
+//                while (!Thread.currentThread().isInterrupted()) {
+//                    Thread.sleep(5000);
+//                    System.out.println("\n[MONITOR] Queue size: " + queue.getSize() +
+//                            ", Admitted: " + queue.getTotalAdmitted());
+//                }
+//            } catch (InterruptedException e) {
+//                Thread.currentThread().interrupt();
+//            }
+//        });
+//        monitor.start();
 
         // Run for specified duration
         Thread.sleep(duration);
@@ -308,34 +308,42 @@ public class HospitalDiagnosticsSystem {
         System.out.println("\n=== Initiating Graceful Shutdown ===");
         for (Clinic c : clinics) c.shutdown();
         for (Analyzer a : analyzers) a.shutdown();
-        for (Auditor a : auditors) a.shutdown();
-        for (Supervisor a : supervisors) a.shutdown();
-        monitor.interrupt();
+//        for (Auditor a : auditors) a.shutdown();
+//        for (Supervisor a : supervisors) a.shutdown();
+//        monitor.interrupt();
 
         // Interrupt all threads
         for (Thread t : clinicThreads) t.interrupt();
-        for (Thread t : analyzerThreads) t.interrupt();
-        for (Thread t : auditorThreads) t.interrupt();
-        for (Thread t : supervisorThreads) t.interrupt();
+//        for (Thread t : auditorThreads) t.interrupt();
+//        for (Thread t : supervisorThreads) t.interrupt();
 
         // Wait for all threads to finish
         for (Thread t : clinicThreads) t.join();
-        for (Thread t : analyzerThreads) t.join();
-        for (Thread t : auditorThreads) t.join();
-        for (Thread t : supervisorThreads) t.join();
-        monitor.join();
+//        for (Thread t : auditorThreads) t.join();
+//        for (Thread t : supervisorThreads) t.join();
+//        monitor.join();
 
-        // Final metrics
-        printFinalMetrics(queue, state);
+        for (Thread t : analyzerThreads) {
+            t.join(10000);  // Wait up to 10 seconds
+            if (t.isAlive()) {
+                // Force interrupt if timeout exceeded
+                System.out.println("Analyzer still running after timeout, forcing interrupt");
+                t.interrupt();
+                t.join();
+            }
+        }
+//
+//        // Final metrics
+//        printFinalMetrics(queue, state);
     }
 
-    private static void printFinalMetrics(BoundedQueue queue, SystemState state) {
-        System.out.println("\n=== Final Metrics ===");
-        System.out.println("Total Admitted to Queue: " + queue.getTotalAdmitted());
-        System.out.println("Total Rejected: " + queue.getTotalRejected());
-        System.out.println("Average Producer Wait Time: " +
-                String.format("%.2f", queue.getAverageWaitTime()) + "ms");
-        System.out.println("Final Queue Size: " + queue.getSize());
-        System.out.println("\n=== All threads terminated successfully ===");
-    }
+//    private static void printFinalMetrics(BoundedQueue queue, SystemState state) {
+//        System.out.println("\n=== Final Metrics ===");
+//        System.out.println("Total Admitted to Queue: " + queue.getTotalAdmitted());
+//        System.out.println("Total Rejected: " + queue.getTotalRejected());
+//        System.out.println("Average Producer Wait Time: " +
+//                String.format("%.2f", queue.getAverageWaitTime()) + "ms");
+//        System.out.println("Final Queue Size: " + queue.getSize());
+//        System.out.println("\n=== All threads terminated successfully ===");
+//    }
 }
