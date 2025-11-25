@@ -1,33 +1,43 @@
 //Writer thread
 class Supervisor implements Runnable {
     private final int id;
-    private final SystemState state;
+    private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
+    private boolean newMaintenanceMode = false;
+    private int newMaxAnalyzerCapacity = 5;
+    private SystemState currentState;
     private final int updateInterval; // ms
     private volatile boolean running = true;
 
-    public Supervisor(int id, SystemState state, int updateInterval) {
+    // cycle count tracker for maintenance
+    private int cycleCount = 0;
+
+    public Supervisor(int id, SystemState currentState, SystemState.ProcessingPolicy newPolicy, int newMaxAnalyzerCapacity, int updateInterval) {
         this.id = id;
-        this.state = state;
+        this.currentState = currentState;
+        this.newPolicy = newPolicy;
+        this.newMaxAnalyzerCapacity = newMaxAnalyzerCapacity;
         this.updateInterval = updateInterval;
     }
 
     @Override
     public void run() {
-        String[] policies = {"FIFO", "PRIORITY", "EMERGENCY_FIRST"};
-        int policyIndex = 0; //Default policy is set to FIFO
-        int capacity = 25;
-        boolean mode = false;
-
         try {
             while (running && !Thread.currentThread().isInterrupted()) {
                 Thread.sleep(updateInterval);
+                cycleCount++;
 
-                policyIndex = (policyIndex + 1) % policies.length;
-                state.setSystemState(policies[policyIndex], capacity, mode);
+                // Set maintence mode in every 25th cycle
+                if (cycleCount % 25 == 0) {
+                    newMaintenanceMode = true;
+                } else {
+                    newMaintenanceMode = false;
+                }
+
+                currentState.setSystemState(newPolicy, newMaxAnalyzerCapacity, newMaintenanceMode);
                 System.out.println("[SUPERVISOR-" + id + "] Reconfiguration of System State : " +
-                        "Policy = " + policies[policyIndex] +
-                        ", Analyzer Capacity = " + capacity +
-                        ", Maintenance Mode = " + ((mode) ? "Yes" : "No"));
+                        "Policy = " + newPolicy.toString() +
+                        ", Analyzer Capacity = " + newMaxAnalyzerCapacity +
+                        ", Maintenance Mode = " + ((newMaintenanceMode) ? "Yes" : "No"));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

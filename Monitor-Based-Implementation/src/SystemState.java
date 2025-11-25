@@ -77,21 +77,20 @@ class SystemState {
         }
     }
 
-    public boolean isMaintenanceMode() throws InterruptedException {
-        acquireRead();
-        try {
-            return maintenanceMode;
-        } finally {
-            releaseRead();
-        }
+    // Check mode and policy before Consume by Analyzer for processing
+    public synchronized boolean isMaintenanceMode() {
+        return maintenanceMode;
+    }
+    public synchronized ProcessingPolicy getCurrentPolicy() throws InterruptedException {
+        return currentPolicy;
     }
 
 
     // Configuration change for supervisors
-    public void setSystemState(String newPolicy, int capacity, boolean isMaintenanceMode) throws InterruptedException{
+    public void setSystemState(ProcessingPolicy newPolicy, int capacity, boolean isMaintenanceMode) throws InterruptedException{
         acquireWrite();
         try {
-            this.currentPolicy = ProcessingPolicy.valueOf(newPolicy);
+            this.currentPolicy = newPolicy;
             this.maxAnalyzerCapacity = capacity;
             this.maintenanceMode = isMaintenanceMode;
         } finally {

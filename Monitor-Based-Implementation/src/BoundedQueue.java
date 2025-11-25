@@ -21,7 +21,7 @@ class BoundedQueue {
         this.orderBuffer = new ArrayList<>(capacity);
     }
 
-    public synchronized boolean produce(TestOrder order, long timeoutMs) throws InterruptedException {
+    public synchronized boolean produce(TestOrder order, long timeoutMs, SystemState.ProcessingPolicy policy) throws InterruptedException {
         long startWait = System.currentTimeMillis();
         long deadline = startWait + timeoutMs;
 
@@ -37,14 +37,53 @@ class BoundedQueue {
 
         totalWaitTime += (System.currentTimeMillis() - startWait);
 
-        // Add to buffer
-        orderBuffer.add(order);
+
+        switch (policy) {
+            case PRIORITY:
+                insertByPriority(order);  // Insert in priority sorted order
+                break;
+            case EMERGENCY_FIRST:
+                if (order.getPriority() == TestOrder.OrderPriority.EMERGENCY) {
+                    // Find position after last emergency order
+                    int insertPos = 0;
+                    for (int i = 0; i < orderBuffer.size(); i++) {
+                        if (orderBuffer.get(i).getPriority() != TestOrder.OrderPriority.EMERGENCY) {
+                            break;  // Found first non-emergency
+                        }
+                        insertPos = i + 1;
+                    }
+                    orderBuffer.add(insertPos, order);
+                } else {
+                    orderBuffer.add(order);      // Add to back
+                }
+                break;
+            case FIFO:
+            default:
+                orderBuffer.add(order);  // Simple add to end
+                break;
+        }
+
         count++;
         totalSubmitted++;
 
         // Notify waiting consumers
         notifyAll();
         return true;
+    }
+
+    // Priority insertion
+    private void insertByPriority(TestOrder order) {
+        int insertIndex = 0;
+        // Find correct position based on priority and submission time
+        for (int i = 0; i < orderBuffer.size(); i++) {
+            // If the order is the priority than i th order in buffer
+            if (order.comparePriority(orderBuffer.get(i)) < 0) {
+                insertIndex = i;
+                break;
+            }
+            insertIndex = i + 1;
+        }
+        orderBuffer.add(insertIndex, order);
     }
 
     public synchronized TestOrder consume(long maxWaitTime, boolean mode) throws InterruptedException {

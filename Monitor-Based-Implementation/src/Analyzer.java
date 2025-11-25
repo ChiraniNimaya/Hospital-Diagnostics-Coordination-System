@@ -31,9 +31,7 @@ public class Analyzer implements Runnable {
                 TestOrder order = queue.consume(maxWaitTime, state.isMaintenanceMode());
                 if (order == null) {
                     state.incrementExpired();
-                    System.out.println("[ANALYZER-" + id + "] Expired " +
-                            order.getType() + " order #" + order.getId() +
-                            " from " + order.getSource());
+                    System.out.println("[ANALYZER-" + id + "] An order is Expired.");
                     continue; // skip processing
                 }
 
@@ -66,7 +64,7 @@ public class Analyzer implements Runnable {
         }
     }
 
-    private int getProcessingTime(TestOrder.Type testType) {
+    private int getProcessingTime(TestOrder.OrderType testType) {
         switch (testType) {
             case BLOOD:
                 return BLOOD_PROCESSING_TIME;
@@ -79,7 +77,7 @@ public class Analyzer implements Runnable {
         }
     }
 
-    private void updateStats(TestOrder.Type testType) {
+    private void updateStats(TestOrder.OrderType testType) {
         switch (testType) {
             case BLOOD:
                 bloodProcessed++;

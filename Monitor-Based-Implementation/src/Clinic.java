@@ -28,9 +28,10 @@ public class Clinic implements Runnable {
                 long elapsedTime = System.currentTimeMillis() - startTime;
 
                 // Generate test order with variable type
-                TestOrder.Type testType = selectTestType();
+                TestOrder.OrderType testType = selectTestType();
                 TestOrder order = new TestOrder(testType, name);
-                boolean admitted = queue.produce(order, 2000); // wait max 2 seconds                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
+                boolean admitted = queue.produce(order, 2000, state.getCurrentPolicy()); // wait max 2 seconds
+                System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                 if (!admitted) {
                     state.incrementRejected();
                 }
@@ -51,15 +52,15 @@ public class Clinic implements Runnable {
     }
 
     // Select test type based on probability distribution using enum values directly
-    private TestOrder.Type selectTestType() {
+    private TestOrder.OrderType selectTestType() {
         double random = Math.random();
 
         if (random < BLOOD_PROBABILITY) {
-            return TestOrder.Type.BLOOD;
+            return TestOrder.OrderType.BLOOD;
         } else if (random < BLOOD_PROBABILITY + PCR_PROBABILITY) {
-            return TestOrder.Type.PCR;
+            return TestOrder.OrderType.PCR;
         } else {
-            return TestOrder.Type.HISTOPATHOLOGY;
+            return TestOrder.OrderType.HISTOPATHOLOGY;
         }
     }
 

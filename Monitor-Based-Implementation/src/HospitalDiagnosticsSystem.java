@@ -36,6 +36,7 @@ public class HospitalDiagnosticsSystem {
         int numAuditors = 2;
         int numSupervisors = 1;
         int runDuration = 30000; // 30 seconds
+        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
@@ -67,7 +68,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, 10000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers,10000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -86,6 +87,7 @@ public class HospitalDiagnosticsSystem {
         int numAuditors = 2;
         int numSupervisors = 1;
         int runDuration = 30000;
+        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.PRIORITY;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
@@ -116,7 +118,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, 10000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 10000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -135,6 +137,7 @@ public class HospitalDiagnosticsSystem {
         int numAuditors = 3;
         int numSupervisors = 1;
         int runDuration = 60000; // 60 seconds to see full pattern cycle
+        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.EMERGENCY_FIRST;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
@@ -163,7 +166,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, 15000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 15000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -182,6 +185,7 @@ public class HospitalDiagnosticsSystem {
         int numAuditors = 10;  // Many readers
         int numSupervisors = 1;
         int runDuration = 30000;
+        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
         BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
@@ -212,7 +216,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, 3000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 3000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -224,6 +228,7 @@ public class HospitalDiagnosticsSystem {
     // Workload 5: Balanced (Default)
     private static void runBalancedWorkload() throws InterruptedException {
         System.out.println("=== WORKLOAD 5: BALANCED (Default) ===\n");
+        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
         int queueCapacity = 10;
         int numClinics = 3;
@@ -259,7 +264,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, 8000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 8000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
