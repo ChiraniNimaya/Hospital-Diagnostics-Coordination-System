@@ -61,7 +61,7 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 5000);
+            auditors[i] = new Auditor(i, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
@@ -111,7 +111,7 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 5000);
+            auditors[i] = new Auditor(i, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
@@ -159,7 +159,7 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 8000);
+            auditors[i] = new Auditor(i, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
@@ -257,7 +257,7 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 5000);
+            auditors[i] = new Auditor(i, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
@@ -284,7 +284,8 @@ public class HospitalDiagnosticsSystem {
         System.out.println("Starting simulation...\n");
         for (Thread t : clinicThreads) t.start();
         for (Thread t : analyzerThreads) t.start();
-//        for (Thread t : auditorThreads) t.start();
+        Thread.sleep(50); //Auditor and Supervisor thread will be started after some Producing happened
+        for (Thread t : auditorThreads) t.start();
 //        for (Thread t : supervisorThreads) t.start();
 
 //        // Monitor queue size periodically
@@ -308,18 +309,18 @@ public class HospitalDiagnosticsSystem {
         System.out.println("\n=== Initiating Graceful Shutdown ===");
         for (Clinic c : clinics) c.shutdown();
         for (Analyzer a : analyzers) a.shutdown();
-//        for (Auditor a : auditors) a.shutdown();
+        for (Auditor a : auditors) a.shutdown();
 //        for (Supervisor a : supervisors) a.shutdown();
 //        monitor.interrupt();
 
         // Interrupt all threads
         for (Thread t : clinicThreads) t.interrupt();
-//        for (Thread t : auditorThreads) t.interrupt();
+        for (Thread t : auditorThreads) t.interrupt();
 //        for (Thread t : supervisorThreads) t.interrupt();
 
         // Wait for all threads to finish
         for (Thread t : clinicThreads) t.join();
-//        for (Thread t : auditorThreads) t.join();
+        for (Thread t : auditorThreads) t.join();
 //        for (Thread t : supervisorThreads) t.join();
 //        monitor.join();
 
