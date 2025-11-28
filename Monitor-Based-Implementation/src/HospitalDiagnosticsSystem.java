@@ -307,33 +307,37 @@ public class HospitalDiagnosticsSystem {
 
         // Graceful shutdown
         System.out.println("\n=== Initiating Graceful Shutdown ===");
+
+        // Stop clinics
         for (Clinic c : clinics) c.shutdown();
-        for (Analyzer a : analyzers) a.shutdown();
-        for (Auditor a : auditors) a.shutdown();
-//        for (Supervisor a : supervisors) a.shutdown();
-//        monitor.interrupt();
-
-        // Interrupt all threads
         for (Thread t : clinicThreads) t.interrupt();
-        for (Thread t : auditorThreads) t.interrupt();
-//        for (Thread t : supervisorThreads) t.interrupt();
-
-        // Wait for all threads to finish
         for (Thread t : clinicThreads) t.join();
+
+        // Wait for queue to empty (let analyzers finish consuming)
+        while (queue.getSize() > 0) {
+            Thread.sleep(100);
+        }
+
+        // Stop auditors
+        for (Auditor a : auditors) a.shutdown();
+        for (Thread t : auditorThreads) t.interrupt();
         for (Thread t : auditorThreads) t.join();
+
+        // Stop Analyzers
+        for (Analyzer a : analyzers) a.shutdown();
+        for (Thread t : analyzerThreads) t.interrupt();
+        for (Thread t : analyzerThreads) t.join();
+
+
+        // Stop Supervisors
+//        for (Supervisor a : supervisors) a.shutdown();
+//        for (Thread t : supervisorThreads) t.interrupt();
 //        for (Thread t : supervisorThreads) t.join();
+
+//        monitor.interrupt();
 //        monitor.join();
 
-        for (Thread t : analyzerThreads) {
-            t.join(10000);  // Wait up to 10 seconds
-            if (t.isAlive()) {
-                // Force interrupt if timeout exceeded
-                System.out.println("Analyzer still running after timeout, forcing interrupt");
-                t.interrupt();
-                t.join();
-            }
-        }
-//
+
 //        // Final metrics
 //        printFinalMetrics(queue, state);
     }

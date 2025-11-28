@@ -37,6 +37,10 @@ public class Analyzer implements Runnable {
                     continue; // skip processing
                 }
 
+                System.out.println("[ANALYZER-" + id + "] is processing " +
+                        order.getType() + " order #" + order.getId() +
+                        " from " + order.getSource() );
+
                 // Process based on test type
                 int processingTime = getProcessingTime(order.getType());
                 Thread.sleep(processingTime);
@@ -44,11 +48,6 @@ public class Analyzer implements Runnable {
                 // Update counts
                 updateStats(order.getType());
                 state.incrementProcessed();
-
-                System.out.println("[ANALYZER-" + id + "] Processed " +
-                        order.getType() + " order #" + order.getId() +
-                        " from " + order.getSource() +
-                        " (took " + processingTime + "ms)");
 
                 // Release slot once processing completes
                 state.releaseAnalyzerSlot();
