@@ -38,8 +38,8 @@ public class HospitalDiagnosticsSystem {
         int runDuration = 30000; // 30 seconds
         SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
-        BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
+        BoundedQueue queue = new BoundedQueue(queueCapacity, state);
 
         // Create clinics with QUIET load pattern
         Clinic[] clinics = new Clinic[numClinics];
@@ -53,7 +53,7 @@ public class HospitalDiagnosticsSystem {
         Analyzer[] analyzers = new Analyzer[numAnalyzers];
         Thread[] analyzerThreads = new Thread[numAnalyzers];
         for (int i = 0; i < numAnalyzers; i++) {
-            analyzers[i] = new Analyzer(i, queue, state);
+            analyzers[i] = new Analyzer("ANALYZER-" + i, queue, state);
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
@@ -89,8 +89,8 @@ public class HospitalDiagnosticsSystem {
         int runDuration = 30000;
         SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.PRIORITY;
 
-        BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
+        BoundedQueue queue = new BoundedQueue(queueCapacity, state);
 
         Clinic[] clinics = new Clinic[numClinics];
         Thread[] clinicThreads = new Thread[numClinics];
@@ -104,7 +104,7 @@ public class HospitalDiagnosticsSystem {
         Analyzer[] analyzers = new Analyzer[numAnalyzers];
         Thread[] analyzerThreads = new Thread[numAnalyzers];
         for (int i = 0; i < numAnalyzers; i++) {
-            analyzers[i] = new Analyzer(i, queue, state);
+            analyzers[i] = new Analyzer("ANALYZER-" + i, queue, state);
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
@@ -139,8 +139,8 @@ public class HospitalDiagnosticsSystem {
         int runDuration = 60000; // 60 seconds to see full pattern cycle
         SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.EMERGENCY_FIRST;
 
-        BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
+        BoundedQueue queue = new BoundedQueue(queueCapacity, state);
 
         Clinic[] clinics = new Clinic[numClinics];
         Thread[] clinicThreads = new Thread[numClinics];
@@ -152,7 +152,7 @@ public class HospitalDiagnosticsSystem {
         Analyzer[] analyzers = new Analyzer[numAnalyzers];
         Thread[] analyzerThreads = new Thread[numAnalyzers];
         for (int i = 0; i < numAnalyzers; i++) {
-            analyzers[i] = new Analyzer(i, queue, state);
+            analyzers[i] = new Analyzer("ANALYZER-" + i, queue, state);
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
@@ -187,8 +187,8 @@ public class HospitalDiagnosticsSystem {
         int runDuration = 30000;
         SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
-        BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
+        BoundedQueue queue = new BoundedQueue(queueCapacity, state);
 
         Clinic[] clinics = new Clinic[numClinics];
         Thread[] clinicThreads = new Thread[numClinics];
@@ -200,7 +200,7 @@ public class HospitalDiagnosticsSystem {
         Analyzer[] analyzers = new Analyzer[numAnalyzers];
         Thread[] analyzerThreads = new Thread[numAnalyzers];
         for (int i = 0; i < numAnalyzers; i++) {
-            analyzers[i] = new Analyzer(i, queue, state);
+            analyzers[i] = new Analyzer("ANALYZER-" + i, queue, state);
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
@@ -231,26 +231,27 @@ public class HospitalDiagnosticsSystem {
         SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
 
         int queueCapacity = 10;
-        int numClinics = 3;
+        int numClinics = 6;
         int numAnalyzers = 3;
+        int numMaxAnalyzers = 5;
         int numAuditors = 2;
         int numSupervisors = 1;
-        int runDuration = 5000;
+        int runDuration = 10000;
 
-        BoundedQueue queue = new BoundedQueue(queueCapacity);
         SystemState state = new SystemState();
+        BoundedQueue queue = new BoundedQueue(queueCapacity, state);
 
         Clinic[] clinics = new Clinic[numClinics];
         Thread[] clinicThreads = new Thread[numClinics];
         for (int i = 0; i < numClinics; i++) {
-            clinics[i] = new Clinic("Clinic-" + i, queue, state, LoadPattern.SCHEDULED);
+            clinics[i] = new Clinic("CLINIC-" + i, queue, state, LoadPattern.SCHEDULED);
             clinicThreads[i] = new Thread(clinics[i]);
         }
 
         Analyzer[] analyzers = new Analyzer[numAnalyzers];
         Thread[] analyzerThreads = new Thread[numAnalyzers];
         for (int i = 0; i < numAnalyzers; i++) {
-            analyzers[i] = new Analyzer(i, queue, state);
+            analyzers[i] = new Analyzer("ANALYZER-" + i, queue, state);
             analyzerThreads[i] = new Thread(analyzers[i]);
         }
 
@@ -264,7 +265,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 8000);
+            supervisors[i] = new Supervisor(i, state, newPolicy, numMaxAnalyzers, 1000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -286,7 +287,7 @@ public class HospitalDiagnosticsSystem {
         for (Thread t : analyzerThreads) t.start();
         Thread.sleep(50); //Auditor and Supervisor thread will be started after some Producing happened
         for (Thread t : auditorThreads) t.start();
-//        for (Thread t : supervisorThreads) t.start();
+        for (Thread t : supervisorThreads) t.start();
 
 //        // Monitor queue size periodically
 //        Thread monitor = new Thread(() -> {
@@ -330,9 +331,9 @@ public class HospitalDiagnosticsSystem {
 
 
         // Stop Supervisors
-//        for (Supervisor a : supervisors) a.shutdown();
-//        for (Thread t : supervisorThreads) t.interrupt();
-//        for (Thread t : supervisorThreads) t.join();
+        for (Supervisor a : supervisors) a.shutdown();
+        for (Thread t : supervisorThreads) t.interrupt();
+        for (Thread t : supervisorThreads) t.join();
 
 //        monitor.interrupt();
 //        monitor.join();

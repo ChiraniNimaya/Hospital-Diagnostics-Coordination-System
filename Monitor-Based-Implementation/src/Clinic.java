@@ -6,10 +6,10 @@ public class Clinic implements Runnable {
     private final LoadPattern loadPattern;
     private volatile boolean running = true;
 
-    // Test type probabilities: BLOOD (60%), PCR (30%), HISTOPATHOLOGY (10%)
-    private static final double BLOOD_PROBABILITY = 0.6;
+    // Test type probabilities: BLOOD (50%), PCR (30%), HISTOPATHOLOGY (15%)
+    private static final double BLOOD_PROBABILITY = 0.5;
     private static final double PCR_PROBABILITY = 0.3;
-    private static final double HISTOPATHOLOGY_PROBABILITY = 0.1;
+    private static final double HISTOPATHOLOGY_PROBABILITY = 0.15;
 
     public Clinic(String name, BoundedQueue queue, SystemState state, LoadPattern pattern) {
         this.name = name;
@@ -21,35 +21,39 @@ public class Clinic implements Runnable {
     @Override
     public void run() {
         int orderCount = 0;
-        try {
-            long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
+        while (true) {
+            if (!running || Thread.currentThread().isInterrupted()) {
+                System.out.println("[" + name + "] Shutting down gracefully");
+                break;
+            }
 
-            while (running && !Thread.currentThread().isInterrupted()) {
-                long elapsedTime = System.currentTimeMillis() - startTime;
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            // Variable rate based on load pattern
+            int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);
 
-                // Generate test order with variable type
-                TestOrder.OrderType testType = selectTestType();
-                TestOrder order = new TestOrder(testType, name);
-                boolean admitted = queue.produce(order, 2000, state.getCurrentPolicy()); // wait max 2 seconds
+            // Generate test order with variable type
+            TestOrder.OrderType testType = selectTestType();
+            TestOrder order = new TestOrder(testType, name);
+            try {
+                boolean admitted = queue.produce(order, state.getCurrentPolicy()); // wait max 2 seconds
                 if (!admitted) {
                     state.incrementRejected();
-                    System.out.println("[" + name + "] Rejected " + testType + " order #" + order.getId());
-                }
-                else {
+                    System.out.println("[" + name + "] Rejected order #" + order.getId() + "(Invalid Order Type).");
+                } else {
                     state.incrementSubmitted();
                     System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());
                     orderCount++;
                 }
-                // Variable rate based on load pattern
-                int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);
+
                 Thread.sleep(sleepTime);
+            } catch(InterruptedException e){
+                System.out.println("[" + name + "] Interrupted - Shutting down gracefully");
+                Thread.currentThread().interrupt();
+                break;
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("[" + name + "] Shutting down gracefully");
-        } finally {
-            System.out.println("[" + name + "] Completed " + orderCount + " orders");
         }
+        System.out.println("[" + name + "] Completed Producing " + orderCount + " orders");
     }
 
     // Select test type based on probability distribution using enum values directly
@@ -60,8 +64,10 @@ public class Clinic implements Runnable {
             return TestOrder.OrderType.BLOOD;
         } else if (random < BLOOD_PROBABILITY + PCR_PROBABILITY) {
             return TestOrder.OrderType.PCR;
-        } else {
+        } else if (random <= BLOOD_PROBABILITY + PCR_PROBABILITY + HISTOPATHOLOGY_PROBABILITY) {
             return TestOrder.OrderType.HISTOPATHOLOGY;
+        } else {
+            return TestOrder.OrderType.OTHER;
         }
     }
 

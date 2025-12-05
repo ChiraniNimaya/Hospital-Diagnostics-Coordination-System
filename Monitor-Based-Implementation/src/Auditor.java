@@ -18,8 +18,12 @@ class Auditor implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while (running && !Thread.currentThread().isInterrupted()) {
+        while (true) {
+            if (!running || Thread.currentThread().isInterrupted()) {
+                System.out.println("[AUDITOR-" + id + "] Shutting down gracefully");
+                break;
+            }
+            try {
                 SystemSnapshot snapshot = state.getSnapshot();
                 totalReports++;
 
@@ -43,16 +47,30 @@ class Auditor implements Runnable {
                 previousSnapshot = snapshot;
 
                 Thread.sleep(reportInterval);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                // Print final consistency report
+                SystemSnapshot finalSnapshot = null;
+                try {
+                    finalSnapshot = state.getSnapshot();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
+        }
+        // Final report
+        try {
+            SystemSnapshot finalSnapshot = state.getSnapshot();
+            System.out.println("[AUDITOR-" + id + "] Final Report " +
+                    " at " + finalSnapshot.timestamp + ": " +
+                    "Submitted=" + finalSnapshot.totalSubmitted +
+                    ", Processed=" + finalSnapshot.totalProcessed +
+                    ", Inconsistencies=" + inconsistencyCount +
+                    " (" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("[AUDITOR-" + id + "] Shutting down gracefully");
-        } finally {
-            // Print final consistency report
-            System.out.println("[AUDITOR-" + id + "] Shutdown: " +
-                    totalReports + " reports, " +
-                    inconsistencyCount + " inconsistencies detected " +
-                    "(" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
+            System.out.println("[AUDITOR-" + id + "] Final snapshot interrupted, Skipping final report.");
         }
     }
 

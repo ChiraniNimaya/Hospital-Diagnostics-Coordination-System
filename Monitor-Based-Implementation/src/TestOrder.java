@@ -1,5 +1,5 @@
 class TestOrder {
-    public enum OrderType { BLOOD, PCR, HISTOPATHOLOGY }
+    public enum OrderType { BLOOD, PCR, HISTOPATHOLOGY, OTHER }
     public enum OrderPriority { ROUTINE, URGENT, EMERGENCY }
 
     private static int counter = 0;

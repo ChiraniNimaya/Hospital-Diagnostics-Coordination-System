@@ -1,6 +1,6 @@
 //Consumer thread
 public class Analyzer implements Runnable {
-    private final int id;
+    private final String name;
     private final BoundedQueue queue;
     private final SystemState state;
     private volatile boolean running = true;
@@ -11,67 +11,72 @@ public class Analyzer implements Runnable {
     private static final int PCR_PROCESSING_TIME = 1000;         // 1 second
     private static final int HISTOPATHOLOGY_PROCESSING_TIME = 2000; // 2 seconds
 
-    private int bloodProcessed = 0;
-    private int pcrProcessed = 0;
-    private int histoProcessed = 0;
-
-    public Analyzer(int id, BoundedQueue queue, SystemState state) {
-        this.id = id;
+    public Analyzer(String name, BoundedQueue queue, SystemState state) {
+        this.name = name;
         this.queue = queue;
         this.state = state;
     }
 
     @Override
     public void run() {
-        try {
+        while (true) {
 
-            while (running && !Thread.currentThread().isInterrupted()) {
+            // Exit condition
+            if (!running || Thread.currentThread().isInterrupted()) {
+                System.out.println("[" + name + "] Shutting down gracefully");
+                break;
+            }
 
+            TestOrder order = null;
+            try {
                 // Wait for a free analyzer slot
                 state.acquireAnalyzerSlot();
-
-                TestOrder order = queue.consume(maxWaitTime, state.isMaintenanceMode());
-                if (order == null) {
-                    state.incrementExpired();
-                    System.out.println("[ANALYZER-" + id + "] An order is Expired.");
-                    continue; // skip processing
-                }
-
-                System.out.println("[ANALYZER-" + id + "] is processing " +
-                        order.getType() + " order #" + order.getId() +
-                        " from " + order.getSource() );
-
-                // Process based on test type
-                int processingTime = getProcessingTime(order.getType());
-                Thread.sleep(processingTime);
-
-                // Update counts
-                updateStats(order.getType());
-                state.incrementProcessed();
-
-                // Release slot once processing completes
-                state.releaseAnalyzerSlot();
-            }
-            // Process remaining orders in a shutdown
-            while (queue.getSize() > 0) {
-                TestOrder order = queue.consume(maxWaitTime, state.isMaintenanceMode());
-                if (order != null) {
-                    updateStats(order.getType());
+                try {
+                    order = queue.consume(maxWaitTime);
+                    if (order == null) {
+                        state.incrementExpired();
+                        continue; // skip processing
+                    }
                     state.incrementProcessed();
+                    System.out.println("[" + name + "] Processing " + order.getType() + " order #" + order.getId() + " from " + order.getSource());
+                    // Process based on test type
+                    Thread.sleep(getProcessingTime(order.getType()));
 
-                    System.out.println("[SHUTDOWN] Processed order #" + order.getId());
+                } finally {
+                    state.releaseAnalyzerSlot();
                 }
-            }
 
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("[ANALYZER-" + id + "] Shutting down gracefully");
-        } finally {
-            // Print final statistics for this analyzer
-            System.out.println("[ANALYZER-" + id + "] Final stats: " +
-                    "BLOOD=" + bloodProcessed +
-                    ", PCR=" + pcrProcessed +
-                    ", HISTO=" + histoProcessed);
+            } catch (InterruptedException e) {
+                System.out.println("[" + name + "] Interrupted - Draining Queue and Shutting down gracefully");
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+
+        // Process remaining orders in a shutdown
+        while (queue.getSize() > 0) {
+            TestOrder order = null;
+            try {
+                state.acquireAnalyzerSlot();
+                order = queue.consume(maxWaitTime);
+                try {
+                    if (order == null) {
+                        state.incrementExpired();
+                        continue;
+                    }
+                    state.incrementProcessed();
+                    System.out.println("[SHUTDOWN] [" + name + "] Processing order #" + order.getId());
+
+                    Thread.sleep(getProcessingTime(order.getType()));
+
+                } finally {
+                    state.releaseAnalyzerSlot();
+                }
+            } catch (InterruptedException e) {
+                System.out.println("[" + name + "] Interrupted - Shutting down gracefully");
+                Thread.currentThread().interrupt();
+                break;
+            }
         }
     }
 
@@ -85,20 +90,6 @@ public class Analyzer implements Runnable {
                 return HISTOPATHOLOGY_PROCESSING_TIME;
             default:
                 return 1000; // Default
-        }
-    }
-
-    private void updateStats(TestOrder.OrderType testType) {
-        switch (testType) {
-            case BLOOD:
-                bloodProcessed++;
-                break;
-            case PCR:
-                pcrProcessed++;
-                break;
-            case HISTOPATHOLOGY:
-                histoProcessed++;
-                break;
         }
     }
 

@@ -6,37 +6,24 @@ class BoundedQueue {
     private final List<TestOrder> orderBuffer;
     private final int capacity;
     private int count = 0;
+    private final SystemState state;
 
-    // Metrics
-    private int totalSubmitted = 0;
-    private int totalRejected = 0;
-    private long totalWaitTime = 0;
-
-    // INVARIANT: 0 <= count <= capacity
-    // INVARIANT: orderBuffer.size() == count
-    // INVARIANT: All elements in orderBuffer are non-null
-
-    public BoundedQueue(int capacity) {
+    public BoundedQueue(int capacity, SystemState state) {
         this.capacity = capacity;
         this.orderBuffer = new ArrayList<>(capacity);
+        this.state = state;
     }
 
-    public synchronized boolean produce(TestOrder order, long timeoutMs, SystemState.ProcessingPolicy policy) throws InterruptedException {
-        long startWait = System.currentTimeMillis();
-        long deadline = startWait + timeoutMs;
+    public synchronized boolean produce(TestOrder order, SystemState.ProcessingPolicy policy) throws InterruptedException {
+
+        if (order.getType() == TestOrder.OrderType.OTHER) {
+            return false;
+        }
 
         // Wait while queue is full
         while (count == capacity) {
-            long remaining = deadline - System.currentTimeMillis();
-            if (remaining <= 0) {
-                totalRejected++;
-                return false;
-            }
-            wait(remaining);
+            wait();
         }
-
-        totalWaitTime += (System.currentTimeMillis() - startWait);
-
 
         switch (policy) {
             case PRIORITY:
@@ -64,7 +51,6 @@ class BoundedQueue {
         }
 
         count++;
-        totalSubmitted++;
 
         // Notify waiting consumers
         notifyAll();
@@ -86,18 +72,19 @@ class BoundedQueue {
         orderBuffer.add(insertIndex, order);
     }
 
-    public synchronized TestOrder consume(long maxWaitTime, boolean mode) throws InterruptedException {
+    public synchronized TestOrder consume(long maxWaitTime) throws InterruptedException {
         // Wait while queue is empty
         while (count == 0) {
             wait();
         }
 
-        // Remove from buffer (FIFO: remove first element)
+        // Remove from buffer (Use FIFO since the items are inserted to queue according to priority)
         TestOrder order = orderBuffer.remove(0);
         count--;
 
         // Check maintenance mode
-        if (mode) {
+        if (state.isMaintenanceMode()) {
+            System.out.println("Order #" + order.getId() + " is Expired before analyze(Maintenance Mode).");
             notifyAll();
             return null; // treat as expired due to maintenance mode
         }
@@ -105,6 +92,7 @@ class BoundedQueue {
         // Check expiration
         long waitTime = System.currentTimeMillis() - order.getSubmissionTime();
         if (waitTime > maxWaitTime) {
+            System.out.println("Order #" + order.getId() + " is Expired before analyze(Timeout).");
             notifyAll();
             return null; // Analyzer will skip expired orders
         }
@@ -112,23 +100,10 @@ class BoundedQueue {
 
         // Notify waiting producers
         notifyAll();
-
         return order;
     }
 
     public synchronized int getSize() {
         return count;
-    }
-
-    public synchronized int getTotalAdmitted() {
-        return totalSubmitted;
-    }
-
-    public synchronized int getTotalRejected() {
-        return totalRejected;
-    }
-
-    public synchronized double getAverageWaitTime() {
-        return totalSubmitted > 0 ? (double) totalWaitTime / totalSubmitted : 0;
     }
 }

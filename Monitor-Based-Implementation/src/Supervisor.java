@@ -3,7 +3,7 @@ class Supervisor implements Runnable {
     private final int id;
     private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
     private boolean newMaintenanceMode = false;
-    private int newMaxAnalyzerCapacity = 5;
+    private int newMaxAnalyzerCapacity = 4;
     private SystemState currentState;
     private final int updateInterval; // ms
     private volatile boolean running = true;
@@ -21,28 +21,37 @@ class Supervisor implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while (running && !Thread.currentThread().isInterrupted()) {
-                Thread.sleep(updateInterval);
+            while (true) {
+
+                if (!running || Thread.currentThread().isInterrupted()) {
+                    System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
+                    break;
+                }
+
                 cycleCount++;
 
-                // Set maintence mode in every 25th cycle
-                if (cycleCount % 25 == 0) {
+                // Set maintenance mode in every 5th cycle
+                if (cycleCount % 5 == 0) {
                     newMaintenanceMode = true;
                 } else {
                     newMaintenanceMode = false;
                 }
 
-                currentState.setSystemState(newPolicy, newMaxAnalyzerCapacity, newMaintenanceMode);
+                try {
+                    Thread.sleep(updateInterval);
+                    currentState.setSystemState(newPolicy, newMaxAnalyzerCapacity, newMaintenanceMode);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
+                    break;
+                }
+
                 System.out.println("[SUPERVISOR-" + id + "] Reconfiguration of System State : " +
                         "Policy = " + newPolicy.toString() +
                         ", Analyzer Capacity = " + newMaxAnalyzerCapacity +
                         ", Maintenance Mode = " + ((newMaintenanceMode) ? "Yes" : "No"));
+
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
-        }
     }
 
     public void shutdown() {
