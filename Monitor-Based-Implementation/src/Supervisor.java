@@ -3,7 +3,7 @@ class Supervisor implements Runnable {
     private final int id;
     private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
     private boolean newMaintenanceMode = false;
-    private int newMaxAnalyzerCapacity = 4;
+    private int newMaxAnalyzerCapacity;
     private SystemState currentState;
     private final int updateInterval; // ms
     private volatile boolean running = true;

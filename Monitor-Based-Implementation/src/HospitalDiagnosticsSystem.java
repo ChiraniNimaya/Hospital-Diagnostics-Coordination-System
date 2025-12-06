@@ -285,7 +285,7 @@ public class HospitalDiagnosticsSystem {
         System.out.println("Starting simulation...\n");
         for (Thread t : clinicThreads) t.start();
         for (Thread t : analyzerThreads) t.start();
-        Thread.sleep(50); //Auditor and Supervisor thread will be started after some Producing happened
+        Thread.sleep(50); //Auditor and Supervisor threads will be started after some Producing happened
         for (Thread t : auditorThreads) t.start();
         for (Thread t : supervisorThreads) t.start();
 

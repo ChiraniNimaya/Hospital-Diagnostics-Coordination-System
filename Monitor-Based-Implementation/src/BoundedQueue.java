@@ -21,7 +21,7 @@ class BoundedQueue {
         }
 
         // Wait while queue is full
-        while (count == capacity) {
+        while (count == capacity || state.isMaintenanceMode()) {
             wait();
         }
 
