@@ -1,6 +1,7 @@
 //Reader thread
 class Auditor implements Runnable {
-    private final int id;
+    private final String name;
+    private final BoundedQueue queue;
     private final SystemState state;
     private final int reportInterval; // ms
     private volatile boolean running = true;
@@ -10,8 +11,9 @@ class Auditor implements Runnable {
     private int inconsistencyCount = 0;
     private int totalReports = 0;
 
-    public Auditor(int id, SystemState state, int reportInterval) {
-        this.id = id;
+    public Auditor(String name, BoundedQueue queue, SystemState state, int reportInterval) {
+        this.name = name;
+        this.queue = queue;
         this.state = state;
         this.reportInterval = reportInterval;
     }
@@ -20,7 +22,7 @@ class Auditor implements Runnable {
     public void run() {
         while (true) {
             if (!running || Thread.currentThread().isInterrupted()) {
-                System.out.println("[AUDITOR-" + id + "] Shutting down gracefully");
+                System.out.println("[" + name + "] Shutting down gracefully");
                 break;
             }
             try {
@@ -34,9 +36,10 @@ class Auditor implements Runnable {
                 String capacityStatus = snapshot.activeAnalyzerSlots + "/" + snapshot.maxAnalyzerCapacity;
                 String consistencyStatus = consistencyOk ? " CONSISTENT " : " INCONSISTENT ";
 
-                System.out.println("[AUDITOR-" + id + "] Report #" + totalReports +
+                System.out.println("[" + name + "] Report #" + totalReports +
                         " at " + snapshot.timestamp + ": " +
-                        "Submitted=" + snapshot.totalSubmitted +
+                        " Queue Size=" + queue.getSize() +
+                        ", Submitted=" + snapshot.totalSubmitted +
                         ", Processed=" + snapshot.totalProcessed +
                         ", Policy=" + snapshot.currentPolicy +
                         ", Analyzers=" + capacityStatus +
@@ -63,14 +66,15 @@ class Auditor implements Runnable {
         // Final report
         try {
             SystemSnapshot finalSnapshot = state.getSnapshot();
-            System.out.println("[AUDITOR-" + id + "] Final Report " +
+            System.out.println("[" + name + "] Final Report " +
                     " at " + finalSnapshot.timestamp + ": " +
-                    "Submitted=" + finalSnapshot.totalSubmitted +
+                    " Queue Size=" + queue.getSize() +
+                    ", Submitted=" + finalSnapshot.totalSubmitted +
                     ", Processed=" + finalSnapshot.totalProcessed +
                     ", Inconsistencies=" + inconsistencyCount +
                     " (" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
         } catch (InterruptedException e) {
-            System.out.println("[AUDITOR-" + id + "] Final snapshot interrupted, Skipping final report.");
+            System.out.println("[" + name + "] Final snapshot interrupted, Skipping final report.");
         }
     }
 
@@ -84,7 +88,7 @@ class Auditor implements Runnable {
 
         // Counters should never decrease
         if (current.totalSubmitted < previousSnapshot.totalSubmitted) {
-            System.out.println("[AUDITOR-" + id + "]  INCONSISTENCY: " +
+            System.out.println("[" + name + "] INCONSISTENCY: " +
                     "Total Submitted Order count has decreased: " +
                     previousSnapshot.totalSubmitted + " → " +
                     current.totalSubmitted);
@@ -92,7 +96,7 @@ class Auditor implements Runnable {
             inconsistencyCount++;
         }
         if (current.totalProcessed < previousSnapshot.totalProcessed) {
-            System.out.println("[AUDITOR-" + id + "]  INCONSISTENCY: " +
+            System.out.println("[" + name + "] INCONSISTENCY: " +
                     "Total Processed Order count has decreased: " +
                     previousSnapshot.totalProcessed + " → " +
                     current.totalProcessed);
@@ -102,7 +106,7 @@ class Auditor implements Runnable {
 
         // Processed order count cannot exceed Submitted order count
         if (current.totalProcessed > current.totalSubmitted) {
-            System.out.println("[AUDITOR-" + id + "]  INCONSISTENCY: " +
+            System.out.println("[" + name + "] INCONSISTENCY: " +
                     "Processed (" + current.totalProcessed +
                     ") exceeds Submitted (" + current.totalSubmitted + ")");
             isConsistent = false;
@@ -111,14 +115,14 @@ class Auditor implements Runnable {
 
         // Active analyzers count should be within capacity and cannot be negative
         if (current.activeAnalyzerSlots > current.maxAnalyzerCapacity) {
-            System.out.println("[AUDITOR-" + id + "]  INCONSISTENCY: " +
+            System.out.println("[" + name + "] INCONSISTENCY: " +
                     "Active analyzers (" + current.activeAnalyzerSlots +
                     ") exceeds capacity (" + current.maxAnalyzerCapacity + ")");
             isConsistent = false;
             inconsistencyCount++;
         }
         if (current.activeAnalyzerSlots < 0) {
-            System.out.println("[AUDITOR-" + id + "]  INCONSISTENCY: " +
+            System.out.println("[" + name + "] INCONSISTENCY: " +
                     "Active analyzers is negative: " + current.activeAnalyzerSlots);
             isConsistent = false;
             inconsistencyCount++;
@@ -132,7 +136,7 @@ class Auditor implements Runnable {
         // If time passed but no progress and system not in maintenance
         if (timeDiff > 10000 && submittedDiff == 0 && processedDiff == 0
                 && !current.maintenanceMode && current.activeAnalyzerSlots > 0) {
-            System.out.println("[AUDITOR-" + id + "]  WARNING: " +
+            System.out.println("[" + name + "] WARNING: " +
                     "No progress in " + timeDiff + "ms " +
                     "(possible deadlock or starvation)");
         }

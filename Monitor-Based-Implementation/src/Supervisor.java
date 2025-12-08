@@ -1,7 +1,6 @@
 //Writer thread
 class Supervisor implements Runnable {
-    private final int id;
-    private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
+    private final String name;    private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
     private boolean newMaintenanceMode = false;
     private int newMaxAnalyzerCapacity;
     private SystemState currentState;
@@ -11,8 +10,8 @@ class Supervisor implements Runnable {
     // cycle count tracker for maintenance
     private int cycleCount = 0;
 
-    public Supervisor(int id, SystemState currentState, SystemState.ProcessingPolicy newPolicy, int newMaxAnalyzerCapacity, int updateInterval) {
-        this.id = id;
+    public Supervisor(String name, SystemState currentState, SystemState.ProcessingPolicy newPolicy, int newMaxAnalyzerCapacity, int updateInterval) {
+        this.name = name;
         this.currentState = currentState;
         this.newPolicy = newPolicy;
         this.newMaxAnalyzerCapacity = newMaxAnalyzerCapacity;
@@ -24,7 +23,7 @@ class Supervisor implements Runnable {
             while (true) {
 
                 if (!running || Thread.currentThread().isInterrupted()) {
-                    System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
+                    System.out.println("[" + name + "] Shutting down gracefully");
                     break;
                 }
 
@@ -42,11 +41,11 @@ class Supervisor implements Runnable {
                     currentState.setSystemState(newPolicy, newMaxAnalyzerCapacity, newMaintenanceMode);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    System.out.println("[SUPERVISOR-" + id + "] Shutting down gracefully");
+                    System.out.println("[" + name + "] Shutting down gracefully");
                     break;
                 }
 
-                System.out.println("[SUPERVISOR-" + id + "] Reconfiguration of System State : " +
+                System.out.println("[" + name + "] Reconfiguration of System State : " +
                         "Policy = " + newPolicy.toString() +
                         ", Analyzer Capacity = " + newMaxAnalyzerCapacity +
                         ", Maintenance Mode = " + ((newMaintenanceMode) ? "Yes" : "No"));

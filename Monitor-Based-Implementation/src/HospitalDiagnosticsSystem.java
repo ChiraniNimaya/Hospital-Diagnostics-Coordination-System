@@ -61,14 +61,14 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 1000);
+            auditors[i] = new Auditor("AUDITOR-" + i, queue, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers,10000);
+            supervisors[i] = new Supervisor("SUPERVISOR-" + i, state, newPolicy, numAnalyzers,10000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -111,14 +111,14 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 1000);
+            auditors[i] = new Auditor("AUDITOR-" + i, queue, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 10000);
+            supervisors[i] = new Supervisor("SUPERVISOR-" + i, state, newPolicy, numAnalyzers, 10000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -159,14 +159,14 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 1000);
+            auditors[i] = new Auditor("AUDITOR-" + i, queue, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 15000);
+            supervisors[i] = new Supervisor("SUPERVISOR-" + i, state, newPolicy, numAnalyzers, 15000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -208,7 +208,7 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 1000); // Every 1 second
+            auditors[i] = new Auditor("AUDITOR-" + i, queue, state, 1000); // Every 1 second
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
@@ -216,7 +216,7 @@ public class HospitalDiagnosticsSystem {
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numAnalyzers, 3000);
+            supervisors[i] = new Supervisor("SUPERVISOR-" + i, state, newPolicy, numAnalyzers, 3000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -258,14 +258,14 @@ public class HospitalDiagnosticsSystem {
         Auditor[] auditors = new Auditor[numAuditors];
         Thread[] auditorThreads = new Thread[numAuditors];
         for (int i = 0; i < numAuditors; i++) {
-            auditors[i] = new Auditor(i, state, 1000);
+            auditors[i] = new Auditor("AUDITOR-" + i, queue, state, 1000);
             auditorThreads[i] = new Thread(auditors[i]);
         }
 
         Supervisor[] supervisors = new Supervisor[numSupervisors];
         Thread[] supervisorThreads = new Thread[numSupervisors];
         for (int i = 0; i < numSupervisors; i++) {
-            supervisors[i] = new Supervisor(i, state, newPolicy, numMaxAnalyzers, 1000);
+            supervisors[i] = new Supervisor("SUPERVISOR-" + i, state, newPolicy, numMaxAnalyzers, 1000);
             supervisorThreads[i] = new Thread(supervisors[i]);
         }
 
@@ -288,20 +288,6 @@ public class HospitalDiagnosticsSystem {
         Thread.sleep(50); //Auditor and Supervisor threads will be started after some Producing happened
         for (Thread t : auditorThreads) t.start();
         for (Thread t : supervisorThreads) t.start();
-
-//        // Monitor queue size periodically
-//        Thread monitor = new Thread(() -> {
-//            try {
-//                while (!Thread.currentThread().isInterrupted()) {
-//                    Thread.sleep(5000);
-//                    System.out.println("\n[MONITOR] Queue size: " + queue.getSize() +
-//                            ", Admitted: " + queue.getTotalAdmitted());
-//                }
-//            } catch (InterruptedException e) {
-//                Thread.currentThread().interrupt();
-//            }
-//        });
-//        monitor.start();
 
         // Run for specified duration
         Thread.sleep(duration);
@@ -334,22 +320,5 @@ public class HospitalDiagnosticsSystem {
         for (Supervisor a : supervisors) a.shutdown();
         for (Thread t : supervisorThreads) t.interrupt();
         for (Thread t : supervisorThreads) t.join();
-
-//        monitor.interrupt();
-//        monitor.join();
-
-
-//        // Final metrics
-//        printFinalMetrics(queue, state);
     }
-
-//    private static void printFinalMetrics(BoundedQueue queue, SystemState state) {
-//        System.out.println("\n=== Final Metrics ===");
-//        System.out.println("Total Admitted to Queue: " + queue.getTotalAdmitted());
-//        System.out.println("Total Rejected: " + queue.getTotalRejected());
-//        System.out.println("Average Producer Wait Time: " +
-//                String.format("%.2f", queue.getAverageWaitTime()) + "ms");
-//        System.out.println("Final Queue Size: " + queue.getSize());
-//        System.out.println("\n=== All threads terminated successfully ===");
-//    }
 }
