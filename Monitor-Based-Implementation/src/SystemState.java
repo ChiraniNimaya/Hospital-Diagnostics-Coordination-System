@@ -22,6 +22,12 @@ class SystemState {
     private int waitingWriters = 0;
     private boolean isActiveWriter = false;
 
+    // Blocking time tracking
+    private long totalReaderBlockingTime = 0;
+    private long totalWriterBlockingTime = 0;
+    private int readerBlockCount = 0;
+    private int writerBlockCount = 0;
+
     public synchronized void incrementSubmitted() { totalSubmitted++; }
     public synchronized void incrementProcessed() { totalProcessed++; }
     public synchronized void incrementRejected() { totalRejected++; }
@@ -29,10 +35,22 @@ class SystemState {
 
     // WRITER-PREFERRING POLICY
     public synchronized void acquireRead() throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        boolean wasBlocked = false;
+
         // Wait if there's an active writer OR if writers are waiting
         while (isActiveWriter || waitingWriters > 0) {
+            wasBlocked = true;
             wait();
         }
+
+        // Track blocking time if reader was blocked
+        if (wasBlocked) {
+            long blockingTime = System.currentTimeMillis() - startTime;
+            totalReaderBlockingTime += blockingTime;
+            readerBlockCount++;
+        }
+
         activeReaders++;
     }
 
@@ -44,11 +62,24 @@ class SystemState {
     }
 
     public synchronized void acquireWrite() throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        boolean wasBlocked = false;
+
         waitingWriters++;
+
         // Wait if there are active readers or an active writer
         while (activeReaders > 0 || isActiveWriter) {
+            wasBlocked = true;
             wait();
         }
+
+        // Track blocking time if writer was blocked
+        if (wasBlocked) {
+            long blockingTime = System.currentTimeMillis() - startTime;
+            totalWriterBlockingTime += blockingTime;
+            writerBlockCount++;
+        }
+
         waitingWriters--;
         isActiveWriter = true;
     }
@@ -109,5 +140,14 @@ class SystemState {
     public synchronized void releaseAnalyzerSlot() {
         activeAnalyzerSlots--;
         notifyAll();
+    }
+
+    // Blocking time statistics
+    public synchronized double getAverageReaderBlockingTime() {
+        return readerBlockCount > 0 ? (double) totalReaderBlockingTime / readerBlockCount : 0.0;
+    }
+
+    public synchronized double getAverageWriterBlockingTime() {
+        return writerBlockCount > 0 ? (double) totalWriterBlockingTime / writerBlockCount : 0.0;
     }
 }

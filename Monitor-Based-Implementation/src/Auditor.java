@@ -66,17 +66,45 @@ class Auditor implements Runnable {
         // Final report
         try {
             SystemSnapshot finalSnapshot = state.getSnapshot();
-            System.out.println("[" + name + "] Final Report " +
-                    " at " + finalSnapshot.timestamp + ": " +
-                    " Queue Size=" + queue.getSize() +
-                    ", Submitted=" + finalSnapshot.totalSubmitted +
-                    ", Processed=" + finalSnapshot.totalProcessed +
-                    ", Rejected=" + finalSnapshot.totalRejected +
-                    ", Expired=" + finalSnapshot.totalExpired +
-                    ", Average Wait Time for Produce: " + queue.getAverageProduceWaitTime() + "ms" +
-                    ", Average Wait Time for Consume: " + queue.getAverageConsumeWaitTime() + "ms" +
-                    ", Inconsistencies=" + inconsistencyCount +
-                    " (" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
+            System.out.println("""
+        
+        ====================================================
+        [%s] FINAL REPORT
+        ====================================================
+        Timestamp: %d
+        
+        Queue Metrics:
+          Queue Size             : %d
+          Orders Submitted       : %d
+          Orders Processed       : %d
+          Orders Rejected        : %d
+          Orders Expired         : %d
+        
+        Performance Metrics:
+          Avg Produce Wait Time  : %.3f ms
+          Avg Consume Wait Time  : %.3f ms
+          Avg Reader Blocking    : %.3f ms
+          Avg Writer Blocking    : %.3f ms
+        
+        Consistency Check:
+          Inconsistencies        : %d / %d (%.2f%%)
+        ====================================================
+        """.formatted(
+                    name,
+                    finalSnapshot.timestamp,
+                    queue.getSize(),
+                    finalSnapshot.totalSubmitted,
+                    finalSnapshot.totalProcessed,
+                    finalSnapshot.totalRejected,
+                    finalSnapshot.totalExpired,
+                    queue.getAverageProduceWaitTime(),
+                    queue.getAverageConsumeWaitTime(),
+                    state.getAverageReaderBlockingTime(),
+                    state.getAverageWriterBlockingTime(),
+                    inconsistencyCount,
+                    totalReports,
+                    (inconsistencyCount * 100.0 / totalReports)
+            ));
         } catch (InterruptedException e) {
             System.out.println("[" + name + "] Final snapshot interrupted, Skipping final report.");
         }
