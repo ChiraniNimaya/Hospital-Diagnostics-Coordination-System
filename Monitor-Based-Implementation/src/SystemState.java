@@ -20,17 +20,17 @@ class SystemState {
     // Reader-Writer control using monitors
     private int activeReaders = 0;
     private int waitingWriters = 0;
-    private boolean activeWriter = false;
+    private boolean isActiveWriter = false;
 
     public synchronized void incrementSubmitted() { totalSubmitted++; }
     public synchronized void incrementProcessed() { totalProcessed++; }
     public synchronized void incrementRejected() { totalRejected++; }
     public synchronized void incrementExpired() { totalExpired++; }
 
-    // READER-PREFERRING POLICY
+    // WRITER-PREFERRING POLICY
     public synchronized void acquireRead() throws InterruptedException {
-        // Wait if there's an active writer
-        while (activeWriter) {
+        // Wait if there's an active writer OR if writers are waiting
+        while (isActiveWriter || waitingWriters > 0) {
             wait();
         }
         activeReaders++;
@@ -46,15 +46,15 @@ class SystemState {
     public synchronized void acquireWrite() throws InterruptedException {
         waitingWriters++;
         // Wait if there are active readers or an active writer
-        while (activeReaders > 0 || activeWriter) {
+        while (activeReaders > 0 || isActiveWriter) {
             wait();
         }
         waitingWriters--;
-        activeWriter = true;
+        isActiveWriter = true;
     }
 
     public synchronized void releaseWrite() {
-        activeWriter = false;
+        isActiveWriter = false;
         notifyAll(); // Wake up all waiting readers and writers
     }
 

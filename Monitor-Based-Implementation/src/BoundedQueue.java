@@ -74,20 +74,13 @@ class BoundedQueue {
 
     public synchronized TestOrder consume(long maxWaitTime) throws InterruptedException {
         // Wait while queue is empty
-        while (count == 0) {
-            wait();
+        while (count == 0  || state.isMaintenanceMode()) {
+            wait(1000); // Timeout to check interruption periodically
         }
 
         // Remove from buffer (Use FIFO since the items are inserted to queue according to priority)
         TestOrder order = orderBuffer.remove(0);
         count--;
-
-        // Check maintenance mode
-        if (state.isMaintenanceMode()) {
-            System.out.println("Order #" + order.getId() + " is Expired before analyze(Maintenance Mode).");
-            notifyAll();
-            return null; // treat as expired due to maintenance mode
-        }
 
         // Check expiration
         long waitTime = System.currentTimeMillis() - order.getSubmissionTime();

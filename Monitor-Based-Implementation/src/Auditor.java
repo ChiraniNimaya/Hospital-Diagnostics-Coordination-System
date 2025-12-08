@@ -32,7 +32,7 @@ class Auditor implements Runnable {
                 boolean consistencyOk = checkConsistency(snapshot);
 
                 // Display functional state information
-                String maintenanceStatus = snapshot.maintenanceMode ? " MAINTENANCE" : " Normal";
+                String maintenanceStatus = snapshot.maintenanceMode ? " MAINTENANCE" : " OPERATING";
                 String capacityStatus = snapshot.activeAnalyzerSlots + "/" + snapshot.maxAnalyzerCapacity;
                 String consistencyStatus = consistencyOk ? " CONSISTENT " : " INCONSISTENT ";
 
@@ -71,6 +71,8 @@ class Auditor implements Runnable {
                     " Queue Size=" + queue.getSize() +
                     ", Submitted=" + finalSnapshot.totalSubmitted +
                     ", Processed=" + finalSnapshot.totalProcessed +
+                    ", Rejected=" + finalSnapshot.totalRejected +
+                    ", Expired=" + finalSnapshot.totalExpired +
                     ", Inconsistencies=" + inconsistencyCount +
                     " (" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
         } catch (InterruptedException e) {
