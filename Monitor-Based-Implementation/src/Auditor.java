@@ -73,6 +73,8 @@ class Auditor implements Runnable {
                     ", Processed=" + finalSnapshot.totalProcessed +
                     ", Rejected=" + finalSnapshot.totalRejected +
                     ", Expired=" + finalSnapshot.totalExpired +
+                    ", Average Wait Time for Produce: " + queue.getAverageProduceWaitTime() + "ms" +
+                    ", Average Wait Time for Consume: " + queue.getAverageConsumeWaitTime() + "ms" +
                     ", Inconsistencies=" + inconsistencyCount +
                     " (" + String.format("%.2f", (inconsistencyCount * 100.0 / totalReports)) + "%)");
         } catch (InterruptedException e) {

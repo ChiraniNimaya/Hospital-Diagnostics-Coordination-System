@@ -6,6 +6,10 @@ class BoundedQueue {
     private final List<TestOrder> orderBuffer;
     private final int capacity;
     private int count = 0;
+    private int totalAdmitted = 0;
+    private int totalProcessed = 0;
+    private long totalProduceWaitTime = 0;
+    private long totalConsumeWaitTime = 0;
     private final SystemState state;
 
     public BoundedQueue(int capacity, SystemState state) {
@@ -15,6 +19,7 @@ class BoundedQueue {
     }
 
     public synchronized boolean produce(TestOrder order, SystemState.ProcessingPolicy policy) throws InterruptedException {
+        long startWait = System.currentTimeMillis();
 
         if (order.getType() == TestOrder.OrderType.OTHER) {
             return false;
@@ -24,6 +29,8 @@ class BoundedQueue {
         while (count == capacity || state.isMaintenanceMode()) {
             wait();
         }
+
+        totalProduceWaitTime += (System.currentTimeMillis() - startWait);
 
         switch (policy) {
             case PRIORITY:
@@ -51,6 +58,7 @@ class BoundedQueue {
         }
 
         count++;
+        totalAdmitted++;
 
         // Notify waiting consumers
         notifyAll();
@@ -73,6 +81,8 @@ class BoundedQueue {
     }
 
     public synchronized TestOrder consume(long maxWaitTime) throws InterruptedException {
+        long startWait = System.currentTimeMillis();
+
         // Wait while queue is empty
         while (count == 0  || state.isMaintenanceMode()) {
             wait(1000); // Timeout to check interruption periodically
@@ -90,6 +100,8 @@ class BoundedQueue {
             return null; // Analyzer will skip expired orders
         }
 
+        totalConsumeWaitTime += (System.currentTimeMillis() - startWait);
+        totalProcessed++;
 
         // Notify waiting producers
         notifyAll();
@@ -98,5 +110,13 @@ class BoundedQueue {
 
     public synchronized int getSize() {
         return count;
+    }
+
+    public synchronized double getAverageProduceWaitTime() {
+        return totalAdmitted > 0 ? (double) totalProduceWaitTime / totalAdmitted : 0;
+    }
+
+    public synchronized double getAverageConsumeWaitTime() {
+        return totalProcessed > 0 ? (double) totalConsumeWaitTime / totalProcessed : 0;
     }
 }
