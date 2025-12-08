@@ -281,6 +281,8 @@ public class HospitalDiagnosticsSystem {
             Thread[] supervisorThreads, BoundedQueue queue, SystemState state, int duration)
             throws InterruptedException {
 
+        printMemoryUsage();
+
         // Start all threads
         System.out.println("Starting simulation...\n");
         for (Thread t : clinicThreads) t.start();
@@ -320,5 +322,21 @@ public class HospitalDiagnosticsSystem {
         for (Supervisor a : supervisors) a.shutdown();
         for (Thread t : supervisorThreads) t.interrupt();
         for (Thread t : supervisorThreads) t.join();
+
+        printMemoryUsage();
     }
+
+    public static void printMemoryUsage() {
+        Runtime rt = Runtime.getRuntime();
+        long total = rt.totalMemory();
+        long free = rt.freeMemory();
+        long used = total - free;
+
+        System.out.println("=== MEMORY USAGE ===");
+        System.out.println("Total Memory: " + (total / (1024 * 1024)) + " MB");
+        System.out.println("Free Memory:  " + (free  / (1024 * 1024)) + " MB");
+        System.out.println("Used Memory:  " + (used  / (1024 * 1024)) + " MB");
+        System.out.println("====================");
+    }
+
 }
