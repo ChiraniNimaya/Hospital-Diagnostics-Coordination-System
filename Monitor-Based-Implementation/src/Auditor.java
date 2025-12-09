@@ -38,7 +38,7 @@ class Auditor implements Runnable {
 
                 System.out.println("[" + name + "] Report #" + totalReports +
                         " at " + snapshot.timestamp + ": " +
-                        " Queue Size=" + queue.getSize() +
+                        " Queue Occupation=" + queue.getSize() + "/" + queue.getQueueCapacity() +
                         ", Submitted=" + snapshot.totalSubmitted +
                         ", Processed=" + snapshot.totalProcessed +
                         ", Policy=" + snapshot.currentPolicy +
@@ -74,17 +74,17 @@ class Auditor implements Runnable {
         Timestamp: %d
         
         Queue Metrics:
-          Queue Size             : %d
+          Queue Size             : %d / %d
           Orders Submitted       : %d
           Orders Processed       : %d
           Orders Rejected        : %d
           Orders Expired         : %d
         
         Performance Metrics:
-          Avg Produce Wait Time  : %.3f ms
-          Avg Consume Wait Time  : %.3f ms
-          Avg Reader Blocking    : %.3f ms
-          Avg Writer Blocking    : %.3f ms
+          Average Producer Wait Time  : %.3f ms
+          Average Consumer Wait Time  : %.3f ms
+          Average Reader Blocking    : %.3f ms
+          Average Writer Blocking    : %.3f ms
         
         Consistency Check:
           Inconsistencies        : %d / %d (%.2f%%)
@@ -93,6 +93,7 @@ class Auditor implements Runnable {
                     name,
                     finalSnapshot.timestamp,
                     queue.getSize(),
+                    queue.getQueueCapacity(),
                     finalSnapshot.totalSubmitted,
                     finalSnapshot.totalProcessed,
                     finalSnapshot.totalRejected,

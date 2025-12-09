@@ -39,7 +39,7 @@ public class Clinic implements Runnable {
                 boolean admitted = queue.produce(order, state.getCurrentPolicy()); // wait max 2 seconds
                 if (!admitted) {
                     state.incrementRejected();
-                    System.out.println("[" + name + "] Rejected order #" + order.getId() + "(Invalid Order Type).");
+                    System.out.println("[" + name + "] Rejected order #" + order.getId() + "(Invalid Order Name)");
                 } else {
                     state.incrementSubmitted();
                     System.out.println("[" + name + "] Produced " + testType + " order #" + order.getId());

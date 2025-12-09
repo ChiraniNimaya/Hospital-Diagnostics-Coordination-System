@@ -112,6 +112,8 @@ class BoundedQueue {
         return count;
     }
 
+    public synchronized int getQueueCapacity() { return capacity;}
+
     public synchronized double getAverageProduceWaitTime() {
         return totalAdmitted > 0 ? (double) totalProduceWaitTime / totalAdmitted : 0;
     }
