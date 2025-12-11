@@ -172,6 +172,12 @@ public class HospitalDiagnosticsSystem {
 
         printMemoryUsage();
 
+        // Watch thread states of some threads
+        LifecycleWatcher.watch(clinicThreads[0], "CLINIC-0");
+//        LifecycleWatcher.watch(analyzerThreads[0], "ANALYZER-0");
+//        LifecycleWatcher.watch(auditorThreads[0], "AUDITOR-0");
+//        LifecycleWatcher.watch(supervisorThreads[0], "SUPERVISOR-0");
+
         // Start all threads
         for (Thread t : clinicThreads) t.start();
         for (Thread t : analyzerThreads) t.start();
