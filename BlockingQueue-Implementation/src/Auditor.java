@@ -1,0 +1,184 @@
+//Reader thread
+class Auditor implements Runnable {
+    private final String name;
+    private final BlockingQueue queue;
+    private final SystemState state;
+    private final int reportInterval; // ms
+    private volatile boolean running = true;
+
+    // Track previous snapshot for consistency checks
+    private SystemSnapshot previousSnapshot = null;
+    private int inconsistencyCount = 0;
+    private int totalReports = 0;
+
+    public Auditor(String name, BlockingQueue queue, SystemState state, int reportInterval) {
+        this.name = name;
+        this.queue = queue;
+        this.state = state;
+        this.reportInterval = reportInterval;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            if (!running || Thread.currentThread().isInterrupted()) {
+                System.out.println("[" + name + "] Shutting down gracefully");
+                break;
+            }
+            try {
+                SystemSnapshot snapshot = state.getSnapshot();
+                totalReports++;
+
+                boolean consistencyOk = checkConsistency(snapshot);
+
+                // Display functional state information
+                String maintenanceStatus = snapshot.maintenanceMode ? " MAINTENANCE" : " OPERATING";
+                String capacityStatus = snapshot.activeAnalyzerSlots + "/" + snapshot.maxAnalyzerCapacity;
+                String consistencyStatus = consistencyOk ? " CONSISTENT " : " INCONSISTENT ";
+
+                System.out.println("[" + name + "] Report #" + totalReports +
+                        " at " + snapshot.timestamp + ": " +
+                        " Queue Occupation=" + queue.getSize() + "/" + queue.getQueueCapacity() +
+                        ", Submitted=" + snapshot.totalSubmitted +
+                        ", Processed=" + snapshot.totalProcessed +
+                        ", Policy=" + snapshot.currentPolicy +
+                        ", Analyzers=" + capacityStatus +
+                        ", Status=" + maintenanceStatus +
+                        ", Consistency=" + consistencyStatus);
+
+                // Update previous snapshot for next check
+                previousSnapshot = snapshot;
+
+                Thread.sleep(reportInterval);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                // Print final consistency report
+                SystemSnapshot finalSnapshot = null;
+                try {
+                    finalSnapshot = state.getSnapshot();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+        // Final report
+        try {
+            SystemSnapshot finalSnapshot = state.getSnapshot();
+            System.out.println("""
+        
+        ====================================================
+        [%s] FINAL REPORT
+        ====================================================
+        Timestamp: %d
+        
+        Queue Metrics:
+          Queue Size             : %d / %d
+          Orders Submitted       : %d
+          Orders Processed       : %d
+          Orders Rejected        : %d
+          Orders Expired         : %d
+        
+        Performance Metrics:
+          Average Producer Wait Time  : %.3f ms
+          Average Consumer Wait Time  : %.3f ms
+          Average Reader Blocking    : %.3f ms
+          Average Writer Blocking    : %.3f ms
+        
+        Consistency Check:
+          Inconsistencies        : %d / %d (%.2f%%)
+        ====================================================
+        """.formatted(
+                    name,
+                    finalSnapshot.timestamp,
+                    queue.getSize(),
+                    queue.getQueueCapacity(),
+                    finalSnapshot.totalSubmitted,
+                    finalSnapshot.totalProcessed,
+                    finalSnapshot.totalRejected,
+                    finalSnapshot.totalExpired,
+                    queue.getAverageProduceWaitTime(),
+                    queue.getAverageConsumeWaitTime(),
+                    state.getAverageReaderBlockingTime(),
+                    state.getAverageWriterBlockingTime(),
+                    inconsistencyCount,
+                    totalReports,
+                    (inconsistencyCount * 100.0 / totalReports)
+            ));
+        } catch (InterruptedException e) {
+            System.out.println("[" + name + "] Final snapshot interrupted, Skipping final report.");
+        }
+    }
+
+    // CONSISTENCY CHECKING LOGIC
+    private boolean checkConsistency(SystemSnapshot current) {
+        if (previousSnapshot == null) {
+            return true; // First snapshot, nothing to compare
+        }
+
+        boolean isConsistent = true;
+
+        // Counters should never decrease
+        if (current.totalSubmitted < previousSnapshot.totalSubmitted) {
+            System.out.println("[" + name + "] INCONSISTENCY: " +
+                    "Total Submitted Order count has decreased: " +
+                    previousSnapshot.totalSubmitted + " → " +
+                    current.totalSubmitted);
+            isConsistent = false;
+            inconsistencyCount++;
+        }
+        if (current.totalProcessed < previousSnapshot.totalProcessed) {
+            System.out.println("[" + name + "] INCONSISTENCY: " +
+                    "Total Processed Order count has decreased: " +
+                    previousSnapshot.totalProcessed + " → " +
+                    current.totalProcessed);
+            isConsistent = false;
+            inconsistencyCount++;
+        }
+
+        // Processed order count cannot exceed Submitted order count
+        if (current.totalProcessed > current.totalSubmitted) {
+            System.out.println("[" + name + "] INCONSISTENCY: " +
+                    "Processed (" + current.totalProcessed +
+                    ") exceeds Submitted (" + current.totalSubmitted + ")");
+            isConsistent = false;
+            inconsistencyCount++;
+        }
+
+        // Active analyzers count should be within capacity and cannot be negative
+        if (current.activeAnalyzerSlots > current.maxAnalyzerCapacity) {
+            System.out.println("[" + name + "] INCONSISTENCY: " +
+                    "Active analyzers (" + current.activeAnalyzerSlots +
+                    ") exceeds capacity (" + current.maxAnalyzerCapacity + ")");
+            isConsistent = false;
+            inconsistencyCount++;
+        }
+        if (current.activeAnalyzerSlots < 0) {
+            System.out.println("[" + name + "] INCONSISTENCY: " +
+                    "Active analyzers is negative: " + current.activeAnalyzerSlots);
+            isConsistent = false;
+            inconsistencyCount++;
+        }
+
+        // System should make progress
+        long timeDiff = current.timestamp - previousSnapshot.timestamp;
+        int submittedDiff = current.totalSubmitted - previousSnapshot.totalSubmitted;
+        int processedDiff = current.totalProcessed - previousSnapshot.totalProcessed;
+
+        // If time passed but no progress and system not in maintenance
+        if (timeDiff > 10000 && submittedDiff == 0 && processedDiff == 0
+                && !current.maintenanceMode && current.activeAnalyzerSlots > 0) {
+            System.out.println("[" + name + "] WARNING: " +
+                    "No progress in " + timeDiff + "ms " +
+                    "(possible deadlock or starvation)");
+        }
+
+        return isConsistent;
+    }
+
+    public void shutdown() {
+        running = false;
+    }
+
+}
