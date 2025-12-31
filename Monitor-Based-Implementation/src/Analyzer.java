@@ -7,9 +7,9 @@ public class Analyzer implements Runnable {
     private long maxWaitTime = 5000; //Wait time to consume before expired
 
     // Different test types require different processing times
-    private static final int BLOOD_PROCESSING_TIME = 500;        // 500ms
-    private static final int PCR_PROCESSING_TIME = 1000;         // 1 second
-    private static final int HISTOPATHOLOGY_PROCESSING_TIME = 2000; // 2 seconds
+    private static final int BLOOD_PROCESSING_TIME = 50;
+    private static final int PCR_PROCESSING_TIME = 100;
+    private static final int HISTOPATHOLOGY_PROCESSING_TIME = 200;
 
     public Analyzer(String name, BoundedQueue queue, SystemState state) {
         this.name = name;

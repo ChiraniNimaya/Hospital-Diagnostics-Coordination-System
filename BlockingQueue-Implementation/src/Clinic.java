@@ -3,34 +3,29 @@ public class Clinic implements Runnable {
     private final String name;
     private final BlockingQueue queue;
     private final SystemState state;
-    private final LoadPattern loadPattern;
     private volatile boolean running = true;
+    private final int producerInterval;
 
     // Test type probabilities: BLOOD (50%), PCR (30%), HISTOPATHOLOGY (15%)
     private static final double BLOOD_PROBABILITY = 0.5;
     private static final double PCR_PROBABILITY = 0.3;
     private static final double HISTOPATHOLOGY_PROBABILITY = 0.15;
 
-    public Clinic(String name, BlockingQueue queue, SystemState state, LoadPattern pattern) {
+    public Clinic(String name, BlockingQueue queue, SystemState state, int producerInterval) {
         this.name = name;
         this.queue = queue;
         this.state = state;
-        this.loadPattern = pattern;
+        this.producerInterval = producerInterval;
     }
 
     @Override
     public void run() {
         int orderCount = 0;
-        long startTime = System.currentTimeMillis();
         while (true) {
             if (!running || Thread.currentThread().isInterrupted()) {
                 System.out.println("[" + name + "] Shutting down gracefully");
                 break;
             }
-
-            long elapsedTime = System.currentTimeMillis() - startTime;
-            // Variable rate based on load pattern
-            int sleepTime = loadPattern.getInterArrivalTime(elapsedTime);
 
             // Generate test order with variable type
             TestOrder.OrderType testType = selectTestType();
@@ -46,7 +41,7 @@ public class Clinic implements Runnable {
                     orderCount++;
                 }
 
-                Thread.sleep(sleepTime);
+                Thread.sleep(producerInterval);
             } catch(InterruptedException e){
                 System.out.println("[" + name + "] Interrupted - Shutting down gracefully");
                 Thread.currentThread().interrupt();
