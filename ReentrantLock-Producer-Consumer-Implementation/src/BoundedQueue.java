@@ -17,7 +17,7 @@ class BoundedQueue {
     private final SystemState state;
 
     // ReentrantLock and Condition variables
-    private final ReentrantLock lock = new ReentrantLock(true); // Fair lock
+    private final ReentrantLock lock = new ReentrantLock(true);
     private final Condition notFull = lock.newCondition();
     private final Condition notEmpty = lock.newCondition();
 
@@ -27,9 +27,6 @@ class BoundedQueue {
         this.state = state;
     }
 
-    /**
-     * Producer method using ReentrantLock
-     */
     public boolean produce(TestOrder order, SystemState.ProcessingPolicy policy) throws InterruptedException {
         long startWait = System.currentTimeMillis();
 
@@ -83,9 +80,7 @@ class BoundedQueue {
         }
     }
 
-    /**
-     * Consumer method using ReentrantLock
-     */
+
     public TestOrder consume(long maxWaitTime) throws InterruptedException {
         long startWait = System.currentTimeMillis();
 
@@ -121,9 +116,6 @@ class BoundedQueue {
         }
     }
 
-    /**
-     * Priority insertion helper
-     */
     private void insertByPriority(TestOrder order) {
         int insertIndex = 0;
         for (int i = 0; i < orderBuffer.size(); i++) {
@@ -136,9 +128,6 @@ class BoundedQueue {
         orderBuffer.add(insertIndex, order);
     }
 
-    /**
-     * Thread-safe getters
-     */
     public int getSize() {
         lock.lock();
         try {

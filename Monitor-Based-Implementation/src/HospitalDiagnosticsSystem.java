@@ -27,102 +27,6 @@ public class HospitalDiagnosticsSystem {
         System.out.println("\nEnd Time: " + System.currentTimeMillis() + "\n");
     }
 
-    // Workload 1: Calm Period (Low Contention)
-    private static void runCalmWorkload() throws InterruptedException {
-        System.out.println("=== WORKLOAD 1: CALM PERIOD ===\n");
-
-        int queueCapacity = 20;
-        int numClinics = 2;
-        int numAnalyzers = 2;
-        int numMaxAnalyzers = 5;
-        int numAuditors = 1;
-        int numSupervisors = 1;
-        int producerInterval = 100; // Normal production
-        int reportInterval = 200;
-        int updateInterval = 4000;
-        int runDuration = 15000;
-        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
-
-        runSimulation(newPolicy, queueCapacity, numClinics, numAnalyzers, numMaxAnalyzers, numAuditors, numSupervisors, producerInterval, reportInterval, updateInterval, runDuration);
-    }
-
-    // Workload 2: Emergency Surge (High Contention)
-    private static void runEmergencySurgeWorkload() throws InterruptedException {
-        System.out.println("=== WORKLOAD 2: EMERGENCY SURGE ===\n");
-
-        int queueCapacity = 5;  // Small queue
-        int numClinics = 6;     // Many producers
-        int numAnalyzers = 2;   // Few consumers
-        int numMaxAnalyzers = 5;
-        int numAuditors = 3;
-        int numSupervisors = 1;
-        int producerInterval = 20; // Fast production
-        int reportInterval = 100;
-        int updateInterval = 2000;
-        int runDuration = 10000;
-        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.PRIORITY;
-
-        runSimulation(newPolicy, queueCapacity, numClinics, numAnalyzers, numMaxAnalyzers, numAuditors, numSupervisors, producerInterval, reportInterval, updateInterval, runDuration);
-    }
-
-
-    // Workload 3: Reader-Heavy
-    private static void runReaderHeavyWorkload() throws InterruptedException {
-        System.out.println("=== WORKLOAD 4: READER-HEAVY ===\n");
-
-        int queueCapacity = 10;
-        int numClinics = 3;
-        int numAnalyzers = 3;
-        int numMaxAnalyzers = 5;
-        int numAuditors = 10;  // Many readers
-        int producerInterval = 200;
-        int numSupervisors = 1;
-        int reportInterval = 500;
-        int updateInterval = 3000;
-        int runDuration = 10000;
-        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
-
-        runSimulation(newPolicy, queueCapacity, numClinics, numAnalyzers, numMaxAnalyzers, numAuditors, numSupervisors, producerInterval, reportInterval, updateInterval, runDuration);
-    }
-
-    // Workload 4: Writer-Heavy
-    private static void runWriterHeavyWorkload() throws InterruptedException {
-        System.out.println("=== WORKLOAD 4: WRITER-HEAVY ===\n");
-
-        int queueCapacity = 10;
-        int numClinics = 3;
-        int numAnalyzers = 3;
-        int numMaxAnalyzers = 5;
-        int numAuditors = 1;
-        int numSupervisors = 10; // Many writers
-        int producerInterval = 200;
-        int reportInterval = 500;
-        int updateInterval = 3000;
-        int runDuration = 20000;
-        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
-
-        runSimulation(newPolicy, queueCapacity, numClinics, numAnalyzers, numMaxAnalyzers, numAuditors, numSupervisors, producerInterval, reportInterval, updateInterval, runDuration);
-    }
-
-    // Workload 5: Balanced (Default)
-    private static void runBalancedWorkload() throws InterruptedException {
-        System.out.println("=== WORKLOAD 5: BALANCED (Default) ===\n");
-        SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;
-
-        int queueCapacity = 10;
-        int numClinics = 3;
-        int numAnalyzers = 3;
-        int numMaxAnalyzers = 5;
-        int numAuditors = 1;
-        int numSupervisors = 1;
-        int producerInterval = 200;
-        int reportInterval = 1000;
-        int updateInterval = 2000;
-        int runDuration = 10000;
-
-        runSimulation(newPolicy, queueCapacity, numClinics, numAnalyzers, numMaxAnalyzers, numAuditors, numSupervisors, producerInterval, reportInterval, updateInterval, runDuration);
-    }
-
     // Common simulation execution logic
     private static void runSimulation(SystemState.ProcessingPolicy newPolicy,
                                         int queueCapacity,
@@ -231,4 +135,39 @@ public class HospitalDiagnosticsSystem {
         System.out.println("====================\n");
     }
 
+
+    // Workload 1: Calm Period (Low Contention)
+    private static void runCalmWorkload() throws InterruptedException {
+        System.out.println("=== WORKLOAD 1: CALM PERIOD ===\n");
+        runSimulation(SystemState.ProcessingPolicy.FIFO, 20, 2, 2, 5, 1, 1,
+                100, 200, 4000, 15000);
+    }
+
+    // Workload 2: Emergency Surge (High Contention)
+    private static void runEmergencySurgeWorkload() throws InterruptedException {
+        System.out.println("=== WORKLOAD 2: EMERGENCY SURGE ===\n");
+        runSimulation(SystemState.ProcessingPolicy.PRIORITY, 5, 6, 2, 5, 3, 1,
+                20, 100, 2000, 10000);
+    }
+
+    // Workload 3: Reader-Heavy
+    private static void runReaderHeavyWorkload() throws InterruptedException {
+        System.out.println("=== WORKLOAD 4: READER-HEAVY ===\n");
+        runSimulation(SystemState.ProcessingPolicy.FIFO, 10, 3, 3, 5, 10, 1,
+                200, 500, 3000, 10000);
+    }
+
+    // Workload 4: Writer-Heavy
+    private static void runWriterHeavyWorkload() throws InterruptedException {
+        System.out.println("=== WORKLOAD 4: WRITER-HEAVY ===\n");
+        runSimulation(SystemState.ProcessingPolicy.FIFO, 10, 3, 3, 5, 1, 10,
+                200, 500, 3000, 20000);
+    }
+
+    // Workload 5: Balanced (Default)
+    private static void runBalancedWorkload() throws InterruptedException {
+        System.out.println("=== WORKLOAD 5: BALANCED (Default) ===\n");
+        runSimulation(SystemState.ProcessingPolicy.FIFO, 10, 3, 3, 5, 1, 1,
+                200, 1000, 2000, 10000);
+    }
 }
