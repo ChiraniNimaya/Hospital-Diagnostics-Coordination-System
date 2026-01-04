@@ -5,7 +5,7 @@ public class HospitalDiagnosticsSystem {
         System.out.println("Part A: Monitor-Based Implementation");
         System.out.println("\nStart Time: " + System.currentTimeMillis() + "\n");
         // Allow command-line selection of workload
-        String workloadType = args.length > 0 ? args[0] : "SURGE";
+        String workloadType = args.length > 0 ? args[0] : "READER_HEAVY";
 
         switch (workloadType.toUpperCase()) {
             case "CALM":

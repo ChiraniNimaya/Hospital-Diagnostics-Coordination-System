@@ -14,6 +14,9 @@ public class BlockingQueue {
 
     private SystemState state;
 
+    // Lock object for atomic operations on statistics
+    private final Object statsLock = new Object();
+
     public BlockingQueue(int capacity, SystemState state) {
         this.capacity = capacity;
         this.orderBuffer = new ArrayBlockingQueue<>(capacity);
@@ -34,8 +37,11 @@ public class BlockingQueue {
 
         orderBuffer.put(order); // Blocks if queue is full
 
-        totalAdmitted.incrementAndGet();
-        totalProduceWaitTime.addAndGet(System.currentTimeMillis() - startWait);
+        // Update counters atomically together
+        synchronized (statsLock) {
+            totalAdmitted.incrementAndGet();
+            totalProduceWaitTime.addAndGet(System.currentTimeMillis() - startWait);
+        }
 
         return true;
     }
@@ -60,8 +66,11 @@ public class BlockingQueue {
             return null; // Analyzer will skip expired orders
         }
 
-        totalProcessed.incrementAndGet();
-        totalConsumeWaitTime.addAndGet(System.currentTimeMillis() - startWait);
+        // Update counters atomically together
+        synchronized (statsLock) {
+            totalProcessed.incrementAndGet();
+            totalConsumeWaitTime.addAndGet(System.currentTimeMillis() - startWait);
+        }
 
         return order;
     }
@@ -75,12 +84,16 @@ public class BlockingQueue {
     }
 
     public double getAverageProduceWaitTime() {
-        int count = totalAdmitted.get();
-        return count > 0 ? (double) totalProduceWaitTime.get() / count : 0;
+        synchronized (statsLock) {
+            int count = totalAdmitted.get();
+            return count > 0 ? (double) totalProduceWaitTime.get() / count : 0;
+        }
     }
 
     public double getAverageConsumeWaitTime() {
-        int count = totalProcessed.get();
-        return count > 0 ? (double) totalConsumeWaitTime.get() / count : 0;
+        synchronized (statsLock) {
+            int count = totalProcessed.get();
+            return count > 0 ? (double) totalConsumeWaitTime.get() / count : 0;
+        }
     }
 }

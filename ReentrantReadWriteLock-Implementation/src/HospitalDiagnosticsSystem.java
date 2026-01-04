@@ -1,22 +1,14 @@
 public class HospitalDiagnosticsSystem {
     // Global fairness flag
-    private static boolean USE_FAIR_LOCKING = false;
+    private static boolean USE_FAIR_LOCKING = true;
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== Hospital Diagnostics Coordination System ===");
         System.out.println("Part B: ReentrantReadWriteLock Implementation");
 
-        // Check for fairness flag
-        if (args.length > 1 && args[1].equalsIgnoreCase("FAIR")) {
-            USE_FAIR_LOCKING = true;
-            System.out.println("*** FAIRNESS MODE ENABLED ***");
-        } else {
-            System.out.println("*** NON-FAIR MODE (Default) ***");
-        }
-
         System.out.println("\nStart Time: " + System.currentTimeMillis() + "\n");
 
-        String workloadType = args.length > 0 ? args[0] : "SURGE";
+        String workloadType = args.length > 0 ? args[0] : "READER_HEAVY";
 
         switch (workloadType.toUpperCase()) {
             case "CALM":
