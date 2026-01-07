@@ -1,8 +1,6 @@
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Shared state for Reader-Writer pattern using ReentrantReadWriteLock
- */
+// Shared state for Reader-Writer pattern using Reentrant Read-Write Lock
 class SystemState {
     private int totalSubmitted = 0;
     private int totalProcessed = 0;

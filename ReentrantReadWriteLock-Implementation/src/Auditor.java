@@ -1,6 +1,4 @@
-/**
- * Reader thread using readLock()
- */
+//Reader thread using readLock()
 class Auditor implements Runnable {
     private final String name;
     private final BoundedQueue queue;

@@ -7,7 +7,6 @@ class SystemState {
     private int maxAnalyzerCapacity = 5;
     private int activeAnalyzerSlots = 0;
 
-    // Functional policy that actually affects behavior
     public enum ProcessingPolicy {
         FIFO,              // First In First Out (default)
         PRIORITY,          // Priority-based (Emergency > Urgent > Routine)
@@ -33,7 +32,7 @@ class SystemState {
     public synchronized void incrementRejected() { totalRejected++; }
     public synchronized void incrementExpired() { totalExpired++; }
 
-    // WRITER-PREFERRING POLICY
+    // Writer-preferring policy
     public synchronized void acquireRead() throws InterruptedException {
         long startTime = System.currentTimeMillis();
         boolean wasBlocked = false;

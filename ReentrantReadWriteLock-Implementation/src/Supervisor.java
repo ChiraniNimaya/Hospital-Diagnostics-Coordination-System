@@ -1,6 +1,4 @@
-/**
- * Writer thread using writeLock()
- */
+//Writer thread using writeLock()
 class Supervisor implements Runnable {
     private final String name;
     private SystemState.ProcessingPolicy newPolicy = SystemState.ProcessingPolicy.FIFO;

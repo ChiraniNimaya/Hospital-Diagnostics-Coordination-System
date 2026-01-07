@@ -3,9 +3,7 @@ import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Monitor-based Producer-Consumer using ReentrantLock and Condition variables
- */
+//Producer-Consumer using ReentrantLock and Condition variables
 class BoundedQueue {
     private final List<TestOrder> orderBuffer;
     private final int capacity;

@@ -1,5 +1,5 @@
 public class LifecycleWatcher {
-    private LifecycleWatcher() {} //private constructor prevents instantiation
+    private LifecycleWatcher() {}
 
     public static Thread watch(Thread target, String label) {
         Thread watcher = new Thread(() -> {

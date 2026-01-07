@@ -1,4 +1,4 @@
-//Producer thread which generates test orders at configurable rates
+//Producer thread
 public class Clinic implements Runnable {
     private final String name;
     private final BlockingQueue queue;

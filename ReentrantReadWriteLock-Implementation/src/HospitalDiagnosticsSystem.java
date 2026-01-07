@@ -8,7 +8,7 @@ public class HospitalDiagnosticsSystem {
 
         System.out.println("\nStart Time: " + System.currentTimeMillis() + "\n");
 
-        String workloadType = args.length > 0 ? args[0] : "READER_HEAVY";
+        String workloadType = args.length > 0 ? args[0] : "BALANCED";
 
         switch (workloadType.toUpperCase()) {
             case "CALM":
@@ -138,7 +138,7 @@ public class HospitalDiagnosticsSystem {
     private static void runWriterHeavyWorkload() throws InterruptedException {
         System.out.println("=== WORKLOAD 4: WRITER-HEAVY ===\n");
         runSimulation(SystemState.ProcessingPolicy.FIFO, 10, 3, 3, 5, 1, 10,
-                200, 500, 3000, 20000);
+                200, 500, 3000, 10000);
     }
 
     private static void runBalancedWorkload() throws InterruptedException {
